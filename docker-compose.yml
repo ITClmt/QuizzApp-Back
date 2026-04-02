@@ -1,0 +1,11 @@
+services:
+  dev-db:
+    image: postgres:18
+    container_name: nest-db
+    restart: always
+    environment:
+      POSTGRES_USER: nestuser
+      POSTGRES_PASSWORD: nestpassword
+      POSTGRES_DB: nestdb
+    ports:
+      - "${DB_PORT}:5432"
