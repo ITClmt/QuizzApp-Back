@@ -8,7 +8,7 @@ import { CreateUserDto } from './dto/create-user.dto';
 const userSelect = {
     id: true,
     email: true,
-    name: true,
+    username: true,
     role: true,
     createdAt: true,
     updatedAt: true,
