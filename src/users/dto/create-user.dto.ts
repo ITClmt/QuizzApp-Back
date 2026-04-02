@@ -9,7 +9,7 @@ export class CreateUserDto {
     @IsOptional()
     @MinLength(3, { message: 'Name must be at least 3 characters long' })
     @MaxLength(20, { message: 'Name must be at most 20 characters long' })
-    name: string;
+    username: string;
 
     @IsString()
     @IsNotEmpty()

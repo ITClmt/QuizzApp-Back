@@ -50,13 +50,13 @@ export class UsersService {
     }
 
     async create(createUserDto: CreateUserDto) {
-        const { email, password, name } = createUserDto;
+        const { email, password, username } = createUserDto;
 
         const hashedPassword = await argon2.hash(password);
 
         try {
             return await this.prisma.user.create({
-                data: { email, password: hashedPassword, name },
+                data: { email, password: hashedPassword, username },
                 select: userSelect
             });
         } catch (error) {
@@ -69,7 +69,7 @@ export class UsersService {
 
         const data: Prisma.UserUpdateInput = {};
         if (updateUserDto.email !== undefined) data.email = updateUserDto.email;
-        if (updateUserDto.name !== undefined) data.name = updateUserDto.name;
+        if (updateUserDto.username !== undefined) data.username = updateUserDto.username;
         if (updateUserDto.password !== undefined) {
             data.password = await argon2.hash(updateUserDto.password);
         }
