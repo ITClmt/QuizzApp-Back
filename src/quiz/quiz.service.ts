@@ -1,6 +1,7 @@
 import { HttpService } from "@nestjs/axios";
 import { Injectable, Logger } from "@nestjs/common";
 import { firstValueFrom } from "rxjs";
+import { Question } from "../generated/prisma/client";
 import { PrismaService } from "../prisma/prisma.service";
 import { OtdQuestion, OtdResponse } from "./interfaces/otd-question.interface";
 import { SanitizedQuestion } from "./interfaces/question.interface";
@@ -133,14 +134,14 @@ export class QuizService {
     }
   }
 
-  private sanitize(question: any, lang: string): SanitizedQuestion {
+  private sanitize(question: Question, lang: string): SanitizedQuestion {
     const isfr = lang === "fr" && question.questionFr;
 
     return {
       id: question.id,
       questionEn: question.questionEn,
       questionFr: question.questionFr ?? null,
-      answers: isfr ? question.answersFr : question.answersEn,
+      answers: (isfr ? question.answersFr : question.answersEn) as string[],
       category: question.category,
       difficulty: question.difficulty,
     };
