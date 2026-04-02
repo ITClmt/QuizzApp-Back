@@ -20,7 +20,9 @@ model User {
   email        String       @unique
   password     String
   avatarSlug   String       @default("default")
+  role         Role         @default(USER)
   lang         String       @default("en")
+  refreshTokens RefreshToken[]
   createdAt    DateTime     @default(now())
   updatedAt    DateTime     @updatedAt
 
@@ -116,3 +118,18 @@ enum GameStatus {
   PLAYING
   FINISHED
 }
+
+enum Role {
+  USER
+  ADMIN
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+}
+
