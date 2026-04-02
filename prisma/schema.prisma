@@ -15,26 +15,104 @@ datasource db {
 }
 
 model User {
-  id            String         @id @default(uuid())
-  email         String         @unique
-  name          String?
-  password      String
-  role          Role           @default(USER)
-  refreshTokens RefreshToken[]
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
+  id           String       @id @default(uuid())
+  username     String       @unique
+  email        String       @unique
+  password     String
+  avatarSlug   String       @default("default")
+  lang         String       @default("en")
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  scores       Score[]
+  sentRequests     Friendship[] @relation("requester")
+  receivedRequests Friendship[] @relation("receiver")
+  gamePlayers  GamePlayer[]
 }
 
-enum Role {
-  USER
-  ADMIN
+model Question {
+  id           String   @id @default(uuid())
+  sourceId     String   @unique
+  questionEn   String
+  questionFr   String?
+  answersEn    Json
+  answersFr    Json?
+  correctIndex Int
+  category     String
+  difficulty   String
+  createdAt    DateTime @default(now())
+
+  gameQuestions GameQuestion[]
 }
 
-model RefreshToken {
+model Score {
   id        String   @id @default(uuid())
-  token     String   @unique
+  value     Int
+  createdAt DateTime @default(now())
+
   userId    String
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  expiresAt DateTime
-  createdAt DateTime @default(now())
+}
+
+model Friendship {
+  id          String   @id @default(uuid())
+  status      FriendshipStatus @default(PENDING)
+  createdAt   DateTime @default(now())
+
+  requesterId String
+  requester   User     @relation("requester", fields: [requesterId], references: [id], onDelete: Cascade)
+
+  receiverId  String
+  receiver    User     @relation("receiver", fields: [receiverId], references: [id], onDelete: Cascade)
+
+  @@unique([requesterId, receiverId])
+}
+
+model Game {
+  id        String     @id @default(uuid())
+  code      String     @unique
+  status    GameStatus @default(WAITING)
+  createdAt DateTime   @default(now())
+
+  players      GamePlayer[]
+  gameQuestions GameQuestion[]
+}
+
+model GamePlayer {
+  id     String @id @default(uuid())
+  score  Int    @default(0)
+  isHost Boolean @default(false)
+
+  gameId String
+  game   Game   @relation(fields: [gameId], references: [id], onDelete: Cascade)
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([gameId, userId])
+}
+
+model GameQuestion {
+  id         String @id @default(uuid())
+  order      Int
+
+  gameId     String
+  game       Game     @relation(fields: [gameId], references: [id], onDelete: Cascade)
+
+  questionId String
+  question   Question @relation(fields: [questionId], references: [id])
+
+  @@unique([gameId, order])
+}
+
+enum FriendshipStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+}
+
+enum GameStatus {
+  WAITING
+  PLAYING
+  FINISHED
 }
