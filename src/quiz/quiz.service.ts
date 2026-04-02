@@ -1,14 +1,14 @@
-import { Injectable, Logger } from '@nestjs/common';
-import { HttpService } from '@nestjs/axios';
-import { PrismaService } from '../prisma/prisma.service';
-import { firstValueFrom } from 'rxjs';
-import { OtdResponse, OtdQuestion } from './interfaces/otd-question.interface';
-import { SanitizedQuestion } from './interfaces/question.interface';
+import { HttpService } from "@nestjs/axios";
+import { Injectable, Logger } from "@nestjs/common";
+import { firstValueFrom } from "rxjs";
+import { PrismaService } from "../prisma/prisma.service";
+import { OtdQuestion, OtdResponse } from "./interfaces/otd-question.interface";
+import { SanitizedQuestion } from "./interfaces/question.interface";
 
 @Injectable()
 export class QuizService {
   private readonly logger = new Logger(QuizService.name);
-  private readonly OTD_URL = 'https://opentdb.com/api.php';
+  private readonly OTD_URL = "https://opentdb.com/api.php";
   private readonly QUESTIONS_PER_GAME = 50;
 
   constructor(
@@ -17,7 +17,7 @@ export class QuizService {
   ) {}
 
   async getQuestions(
-    lang: string = 'en',
+    lang: string = "en",
     difficulty?: string,
     category?: string,
   ): Promise<SanitizedQuestion[]> {
@@ -90,29 +90,29 @@ export class QuizService {
     // Décode les entités HTML qu'OTD renvoie encodées
     const decode = (str: string) =>
       str
-        .replace(/&amp;/g, '&')
-        .replace(/&lt;/g, '<')
-        .replace(/&gt;/g, '>')
+        .replace(/&amp;/g, "&")
+        .replace(/&lt;/g, "<")
+        .replace(/&gt;/g, ">")
         .replace(/&quot;/g, '"')
         .replace(/&#039;/g, "'")
-        .replace(/&eacute;/g, 'é')
-        .replace(/&egrave;/g, 'è')
-        .replace(/&ecirc;/g, 'ê')
-        .replace(/&agrave;/g, 'à')
-        .replace(/&ccedil;/g, 'ç')
-        .replace(/&ugrave;/g, 'ù')
-        .replace(/&ucirc;/g, 'û')
-        .replace(/&ocirc;/g, 'ô')
-        .replace(/&icirc;/g, 'î')
-        .replace(/&iacute;/g, 'í')
-        .replace(/&iacute;/g, 'í');
+        .replace(/&eacute;/g, "é")
+        .replace(/&egrave;/g, "è")
+        .replace(/&ecirc;/g, "ê")
+        .replace(/&agrave;/g, "à")
+        .replace(/&ccedil;/g, "ç")
+        .replace(/&ugrave;/g, "ù")
+        .replace(/&ucirc;/g, "û")
+        .replace(/&ocirc;/g, "ô")
+        .replace(/&icirc;/g, "î")
+        .replace(/&iacute;/g, "í")
+        .replace(/&iacute;/g, "í");
 
     const answers = [...q.incorrect_answers, q.correct_answer].map(decode);
     const shuffled = answers.sort(() => Math.random() - 0.5);
     const correctIndex = shuffled.indexOf(decode(q.correct_answer));
 
     // sourceId = hash de la question pour éviter les doublons
-    const sourceId = Buffer.from(q.question).toString('base64').slice(0, 50);
+    const sourceId = Buffer.from(q.question).toString("base64").slice(0, 50);
 
     try {
       return await this.prisma.question.upsert({
@@ -134,7 +134,7 @@ export class QuizService {
   }
 
   private sanitize(question: any, lang: string): SanitizedQuestion {
-    const isfr = lang === 'fr' && question.questionFr;
+    const isfr = lang === "fr" && question.questionFr;
 
     return {
       id: question.id,
