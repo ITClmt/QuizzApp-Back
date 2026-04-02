@@ -8,6 +8,8 @@ import { ConfigModule } from '@nestjs/config';
 import { ScheduleModule } from '@nestjs/schedule';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
+import { QuizController } from './quiz/quiz.controller';
+import { QuizModule } from './quiz/quiz.module';
 
 @Module({
   imports: [
@@ -28,8 +30,9 @@ import { APP_GUARD } from '@nestjs/core';
     PrismaModule,
     UsersModule,
     AuthModule,
+    QuizModule,
   ],
-  controllers: [AppController],
+  controllers: [AppController, QuizController],
   providers: [
     AppService,
     { provide: APP_GUARD, useClass: ThrottlerGuard },
