@@ -105,7 +105,6 @@ export class QuizService {
         .replace(/&ucirc;/g, "û")
         .replace(/&ocirc;/g, "ô")
         .replace(/&icirc;/g, "î")
-        .replace(/&iacute;/g, "í")
         .replace(/&iacute;/g, "í");
 
     const answers = [...q.incorrect_answers, q.correct_answer].map(decode);
