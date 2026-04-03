@@ -150,12 +150,23 @@ export class QuizService {
   async validateAnswer(
     questionId: string,
     answerIndex: number,
-  ): Promise<boolean> {
+    lang: string,
+  ): Promise<{ isCorrect: boolean; correctAnswer: string } | null> {
     const question = await this.prisma.question.findUnique({
       where: { id: questionId },
     });
 
-    if (!question) return false;
-    return question.correctIndex === answerIndex;
+    if (!question) return null;
+
+    const answers = (
+      lang === "fr" && question.answersFr
+        ? question.answersFr
+        : question.answersEn
+    ) as string[];
+
+    return {
+      isCorrect: question.correctIndex === answerIndex,
+      correctAnswer: answers[question.correctIndex],
+    };
   }
 }

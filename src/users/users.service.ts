@@ -14,6 +14,8 @@ const userSelect = {
 	email: true,
 	username: true,
 	role: true,
+	lang: true,
+	avatarSlug: true,
 	createdAt: true,
 	updatedAt: true,
 };

@@ -1,18 +1,17 @@
 info:
-  name: Create User
+  name: Post answer
   type: http
-  seq: 1
+  seq: 7
 
 http:
   method: POST
-  url: http://localhost:3000/auth/register
+  url: http://localhost:3000/quiz/answer
   body:
     type: json
     data: |-
       {
-        "email": "test@example.com",
-        "password": "Oasis91350?",
-        "username": "Jean Dupont"
+        "questionId": "126927cc-a5d5-435e-83e1-280491161820",
+        "answerIndex": 0
       }
   auth: inherit
 

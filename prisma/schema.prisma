@@ -48,12 +48,13 @@ model Question {
 }
 
 model Score {
-  id        String   @id @default(uuid())
-  value     Int
-  createdAt DateTime @default(now())
+  id         String   @id @default(uuid())
+  value      Int
+  difficulty Difficulty
+  createdAt  DateTime @default(now())
 
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Friendship {
@@ -122,6 +123,12 @@ enum GameStatus {
 enum Role {
   USER
   ADMIN
+}
+
+enum Difficulty {
+  EASY
+  MEDIUM
+  HARD
 }
 
 model RefreshToken {
