@@ -1,0 +1,33 @@
+info:
+  name: Post finish session
+  type: http
+  seq: 11
+
+http:
+  method: POST
+  url: http://localhost:3000/quiz/finish
+  body:
+    type: json
+    data: |
+      {
+        "sessionId": "b6c4fc4e-fd99-424a-817d-a03cbb5423c4",
+        "answers": [
+          {
+            "questionId": "50ff3721-50e5-40d7-a363-9b61bdb168b3",
+            "answerIndex": 0
+          },
+          {
+            "questionId": "50ff3721-50e5-40d7-a363-9b61bdb168b3",
+            "answerIndex": 0
+          }
+        ]
+      }
+  auth:
+    type: bearer
+    token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI5NjBkMDA2ZC04MDcyLTQ5OGQtOGM5Ny04NjczOWU2ODYyM2EiLCJlbWFpbCI6InRlc3RAZXhhbXBsZS5jb20iLCJyb2xlIjoiVVNFUiIsInVzZXJuYW1lIjoiSmVhbiBEdXBvbnQiLCJsYW5nIjoiZW4iLCJpYXQiOjE3NzUyMTcxMDIsImV4cCI6MTc3NTIxODAwMn0.UX940VE747ZidLC6FU3FQtR2DwrnlW0Qh1aqEROu7Iw
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

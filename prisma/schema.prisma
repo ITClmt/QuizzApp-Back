@@ -114,6 +114,7 @@ model SoloSession {
   id         String            @id @default(uuid())
   status     SoloSessionStatus @default(IN_PROGRESS)
   difficulty Difficulty?
+  category   String?
   lang       String            @default("en")
   expiresAt  DateTime
   createdAt  DateTime          @default(now())

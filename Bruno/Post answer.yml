@@ -10,10 +10,12 @@ http:
     type: json
     data: |-
       {
-        "questionId": "126927cc-a5d5-435e-83e1-280491161820",
-        "answerIndex": 0
+        "questionId": "1e947a21-174b-4904-ad99-28344fcb9a71",
+        "answerIndex": 1
       }
-  auth: inherit
+  auth:
+    type: bearer
+    token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIwZjFiNzRmOS0zYjQ1LTQxZDctOWE3My1jNzZmOTRmOGNiNmYiLCJlbWFpbCI6InRlc3RAZXhhbXBsZS5jb20iLCJyb2xlIjoiVVNFUiIsInVzZXJuYW1lIjoiSmVhbiBEdXBvbnQiLCJsYW5nIjoiZW4iLCJpYXQiOjE3NzUyMDg0MDAsImV4cCI6MTc3NTIwOTMwMH0.U5mM6w1uJ_bJnrUPXrWpMlepXxJNIYb6dfKI3DmmLiM
 
 settings:
   encodeUrl: true

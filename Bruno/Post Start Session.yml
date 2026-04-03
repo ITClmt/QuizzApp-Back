@@ -1,0 +1,24 @@
+info:
+  name: Post Start Session
+  type: http
+  seq: 9
+
+http:
+  method: POST
+  url: http://localhost:3000/quiz/start?difficulty=easy&category=9
+  params:
+    - name: difficulty
+      value: easy
+      type: query
+    - name: category
+      value: "9"
+      type: query
+  auth:
+    type: bearer
+    token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI5NjBkMDA2ZC04MDcyLTQ5OGQtOGM5Ny04NjczOWU2ODYyM2EiLCJlbWFpbCI6InRlc3RAZXhhbXBsZS5jb20iLCJyb2xlIjoiVVNFUiIsInVzZXJuYW1lIjoiSmVhbiBEdXBvbnQiLCJsYW5nIjoiZW4iLCJpYXQiOjE3NzUyMTYzMDQsImV4cCI6MTc3NTIxNzIwNH0.zVM7Xampc63R7VjpmIsPM8ZZR4YHb-K00LnlUyJwGKE
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

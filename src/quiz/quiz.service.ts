@@ -1,8 +1,16 @@
 import { HttpService } from "@nestjs/axios";
-import { Injectable, Logger } from "@nestjs/common";
+import {
+  BadRequestException,
+  ConflictException,
+  Injectable,
+  Logger,
+  NotFoundException,
+} from "@nestjs/common";
+import he from "he";
 import { firstValueFrom } from "rxjs";
-import { Question } from "../generated/prisma/client";
+import { Difficulty, Question } from "../generated/prisma/client";
 import { PrismaService } from "../prisma/prisma.service";
+import { AnswerDto } from "./dto/finish-session.dto";
 import { OtdQuestion, OtdResponse } from "./interfaces/otd-question.interface";
 import { SanitizedQuestion } from "./interfaces/question.interface";
 
@@ -10,7 +18,8 @@ import { SanitizedQuestion } from "./interfaces/question.interface";
 export class QuizService {
   private readonly logger = new Logger(QuizService.name);
   private readonly OTD_URL = "https://opentdb.com/api.php";
-  private readonly QUESTIONS_PER_GAME = 50;
+  private readonly QUESTIONS_PER_GAME = 2;
+  private readonly GAME_DURATION_MS = 3 * 60 * 1000; // 3 minutes
 
   constructor(
     private readonly httpService: HttpService,
@@ -89,23 +98,7 @@ export class QuizService {
 
   private async saveQuestion(q: OtdQuestion) {
     // Décode les entités HTML qu'OTD renvoie encodées
-    const decode = (str: string) =>
-      str
-        .replace(/&amp;/g, "&")
-        .replace(/&lt;/g, "<")
-        .replace(/&gt;/g, ">")
-        .replace(/&quot;/g, '"')
-        .replace(/&#039;/g, "'")
-        .replace(/&eacute;/g, "é")
-        .replace(/&egrave;/g, "è")
-        .replace(/&ecirc;/g, "ê")
-        .replace(/&agrave;/g, "à")
-        .replace(/&ccedil;/g, "ç")
-        .replace(/&ugrave;/g, "ù")
-        .replace(/&ucirc;/g, "û")
-        .replace(/&ocirc;/g, "ô")
-        .replace(/&icirc;/g, "î")
-        .replace(/&iacute;/g, "í");
+    const decode = (str: string) => he.decode(str);
 
     const answers = [...q.incorrect_answers, q.correct_answer].map(decode);
     const shuffled = answers.sort(() => Math.random() - 0.5);
@@ -169,5 +162,182 @@ export class QuizService {
       isCorrect: question.correctIndex === answerIndex,
       correctAnswer: answers[question.correctIndex],
     };
+  }
+
+  async startSession(
+    userId: string,
+    lang: string,
+    difficulty?: string,
+    category?: string,
+  ) {
+    // Vérifie qu'aucune session n'est déjà en cours
+    const existing = await this.prisma.soloSession.findFirst({
+      where: {
+        userId,
+        status: "IN_PROGRESS",
+        expiresAt: { gt: new Date() },
+      },
+    });
+
+    if (existing) {
+      throw new ConflictException("A session is already in progress");
+    }
+
+    const questions = await this.getQuestions(lang, difficulty, category);
+
+    // Crée la session
+    const session = await this.prisma.soloSession.create({
+      data: {
+        userId,
+        lang,
+        difficulty: difficulty ? (difficulty as Difficulty) : null,
+        category: category ? category : null,
+        expiresAt: new Date(Date.now() + (this.GAME_DURATION_MS + 30000)),
+      },
+    });
+
+    return {
+      sessionId: session.id,
+      expiresAt: session.expiresAt,
+      questions,
+    };
+  }
+
+  async finishSession(userId: string, sessionId: string, answers: AnswerDto[]) {
+    const session = await this.getActiveSession(userId, sessionId);
+
+    // Récupère toutes les questions en une seule requête
+    const questionIds = answers.map((a) => a.questionId);
+    const questions = await this.prisma.question.findMany({
+      where: { id: { in: questionIds } },
+    });
+
+    // Map pour accès rapide par id
+    const questionMap = new Map(questions.map((q) => [q.id, q]));
+
+    // Initialisation des accumulateurs (Boucle unique O(N) pour la performance)
+    const soloAnswersData: Array<{
+      sessionId: string;
+      questionId: string;
+      answerIndex: number;
+      isCorrect: boolean;
+    }> = [];
+    
+    const scoresByDifficulty: Record<string, number> = {};
+    
+    const answersResult: Array<{
+      questionId: string;
+      isCorrect: boolean;
+      correctAnswer: string;
+    }> = [];
+    
+    let totalScore = 0;
+
+    // Boucle unique pour traiter chaque réponse
+    for (const answer of answers) {
+      const question = questionMap.get(answer.questionId);
+      if (!question) {
+        throw new BadRequestException(
+          `Question ${answer.questionId} introuvable ou invalide.`,
+        );
+      }
+
+      const isCorrect = question.correctIndex === answer.answerIndex;
+
+      // 1. Data DTO pour l'insertion Prisma
+      soloAnswersData.push({
+        sessionId,
+        questionId: answer.questionId,
+        answerIndex: answer.answerIndex,
+        isCorrect,
+      });
+
+      // 2. Calcule le score à la volée si correct
+      if (isCorrect) {
+        const diff = question.difficulty.toLowerCase() as Difficulty;
+        scoresByDifficulty[diff] = (scoresByDifficulty[diff] ?? 0) + 1;
+        totalScore++;
+      }
+
+      // 3. Construit directement le retour visuel
+      const isfr = session.lang === "fr" && question.answersFr;
+      const choices = (
+        isfr ? question.answersFr : question.answersEn
+      ) as string[];
+      
+      answersResult.push({
+        questionId: answer.questionId,
+        isCorrect,
+        correctAnswer: choices[question.correctIndex],
+      });
+    }
+
+    // Tout en une seule transaction
+    await this.prisma.$transaction([
+      // Crée tous les SoloAnswer en batch
+      this.prisma.soloAnswer.createMany({
+        data: soloAnswersData,
+        skipDuplicates: true,
+      }),
+
+      // Crée les scores par difficulté
+      ...Object.entries(scoresByDifficulty).map(([difficulty, value]) =>
+        this.prisma.score.create({
+          data: {
+            userId,
+            difficulty: difficulty as Difficulty,
+            value,
+          },
+        }),
+      ),
+
+      // Marque la session comme terminée
+      this.prisma.soloSession.update({
+        where: { id: sessionId },
+        data: { status: "FINISHED" },
+      }),
+    ]);
+
+    // Retourne le récapitulatif formaté
+    return {
+      totalScore,
+      details: Object.entries(scoresByDifficulty).map(
+        ([difficulty, value]) => ({
+          difficulty,
+          value,
+        }),
+      ),
+      answers: answersResult,
+    };
+  }
+
+  // ─── Helper : session active ────────────────────────────────────────
+
+  private async getActiveSession(userId: string, sessionId: string) {
+    const session = await this.prisma.soloSession.findUnique({
+      where: { id: sessionId },
+    });
+
+    if (!session) {
+      throw new NotFoundException("Session not found");
+    }
+
+    if (session.userId !== userId) {
+      throw new BadRequestException("Session does not belong to this user");
+    }
+
+    if (session.status !== "IN_PROGRESS") {
+      throw new BadRequestException("Session is already finished");
+    }
+
+    if (new Date() > session.expiresAt) {
+      await this.prisma.soloSession.update({
+        where: { id: sessionId },
+        data: { status: "EXPIRED" },
+      });
+      throw new BadRequestException("Session has expired");
+    }
+
+    return session;
   }
 }
