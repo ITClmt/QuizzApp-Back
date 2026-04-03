@@ -162,9 +162,9 @@ enum Role {
 }
 
 enum Difficulty {
-  EASY
-  MEDIUM
-  HARD
+  easy
+  medium
+  hard
 }
 
 model RefreshToken {

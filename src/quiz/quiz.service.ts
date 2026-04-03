@@ -141,6 +141,7 @@ export class QuizService {
       questionEn: question.questionEn,
       questionFr: question.questionFr ?? null,
       answers: (isfr ? question.answersFr : question.answersEn) as string[],
+      correctIndex: question.correctIndex,
       category: question.category,
       difficulty: question.difficulty,
     };
