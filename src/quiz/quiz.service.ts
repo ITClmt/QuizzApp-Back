@@ -66,7 +66,7 @@ export class QuizService {
 
     // 3. TODO: Si lang === 'fr', traduire via DeepL les questions sans questionFr
 
-    // 4. Sanitize et retourne (sans correctIndex)
+    // 4. Sanitize et retourne
     return fetchedQuestions.map((question) => this.sanitize(question, lang));
   }
 
@@ -222,15 +222,15 @@ export class QuizService {
       answerIndex: number;
       isCorrect: boolean;
     }> = [];
-    
+
     const scoresByDifficulty: Record<string, number> = {};
-    
+
     const answersResult: Array<{
       questionId: string;
       isCorrect: boolean;
       correctAnswer: string;
     }> = [];
-    
+
     let totalScore = 0;
 
     // Boucle unique pour traiter chaque réponse
@@ -264,7 +264,7 @@ export class QuizService {
       const choices = (
         isfr ? question.answersFr : question.answersEn
       ) as string[];
-      
+
       answersResult.push({
         questionId: answer.questionId,
         isCorrect,
