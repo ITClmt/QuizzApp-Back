@@ -31,6 +31,5 @@ export class CreateUserDto {
   password: string;
 
   @IsString()
-  @IsNotEmpty()
   lang: string;
 }

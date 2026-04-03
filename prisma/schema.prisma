@@ -15,21 +15,22 @@ datasource db {
 }
 
 model User {
-  id           String       @id @default(uuid())
-  username     String       @unique
-  email        String       @unique
-  password     String
-  avatarSlug   String       @default("default")
-  role         Role         @default(USER)
-  lang         String       @default("en")
+  id            String         @id @default(uuid())
+  username      String         @unique
+  email         String         @unique
+  password      String
+  avatarSlug    String         @default("default")
+  role          Role           @default(USER)
+  lang          String         @default("en")
   refreshTokens RefreshToken[]
-  createdAt    DateTime     @default(now())
-  updatedAt    DateTime     @updatedAt
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
 
-  scores       Score[]
-  sentRequests     Friendship[] @relation("requester")
-  receivedRequests Friendship[] @relation("receiver")
-  gamePlayers  GamePlayer[]
+  scores           Score[]
+  sentRequests     Friendship[]  @relation("requester")
+  receivedRequests Friendship[]  @relation("receiver")
+  gamePlayers      GamePlayer[]
+  soloSessions     SoloSession[]
 }
 
 model Question {
@@ -45,28 +46,29 @@ model Question {
   createdAt    DateTime @default(now())
 
   gameQuestions GameQuestion[]
+  soloAnswers   SoloAnswer[]
 }
 
 model Score {
-  id         String   @id @default(uuid())
+  id         String     @id @default(uuid())
   value      Int
   difficulty Difficulty
-  createdAt  DateTime @default(now())
+  createdAt  DateTime   @default(now())
 
   userId String
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Friendship {
-  id          String   @id @default(uuid())
-  status      FriendshipStatus @default(PENDING)
-  createdAt   DateTime @default(now())
+  id        String           @id @default(uuid())
+  status    FriendshipStatus @default(PENDING)
+  createdAt DateTime         @default(now())
 
   requesterId String
-  requester   User     @relation("requester", fields: [requesterId], references: [id], onDelete: Cascade)
+  requester   User   @relation("requester", fields: [requesterId], references: [id], onDelete: Cascade)
 
-  receiverId  String
-  receiver    User     @relation("receiver", fields: [receiverId], references: [id], onDelete: Cascade)
+  receiverId String
+  receiver   User   @relation("receiver", fields: [receiverId], references: [id], onDelete: Cascade)
 
   @@unique([requesterId, receiverId])
 }
@@ -77,13 +79,13 @@ model Game {
   status    GameStatus @default(WAITING)
   createdAt DateTime   @default(now())
 
-  players      GamePlayer[]
+  players       GamePlayer[]
   gameQuestions GameQuestion[]
 }
 
 model GamePlayer {
-  id     String @id @default(uuid())
-  score  Int    @default(0)
+  id     String  @id @default(uuid())
+  score  Int     @default(0)
   isHost Boolean @default(false)
 
   gameId String
@@ -96,16 +98,44 @@ model GamePlayer {
 }
 
 model GameQuestion {
-  id         String @id @default(uuid())
-  order      Int
+  id    String @id @default(uuid())
+  order Int
 
-  gameId     String
-  game       Game     @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  gameId String
+  game   Game   @relation(fields: [gameId], references: [id], onDelete: Cascade)
 
   questionId String
   question   Question @relation(fields: [questionId], references: [id])
 
   @@unique([gameId, order])
+}
+
+model SoloSession {
+  id         String            @id @default(uuid())
+  status     SoloSessionStatus @default(IN_PROGRESS)
+  difficulty Difficulty?
+  lang       String            @default("en")
+  expiresAt  DateTime
+  createdAt  DateTime          @default(now())
+
+  userId  String
+  user    User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  answers SoloAnswer[]
+}
+
+model SoloAnswer {
+  id          String   @id @default(uuid())
+  answerIndex Int
+  isCorrect   Boolean
+  createdAt   DateTime @default(now())
+
+  sessionId   String
+  soloSession SoloSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  questionId String
+  question   Question @relation(fields: [questionId], references: [id])
+
+  @@unique([sessionId, questionId])
 }
 
 enum FriendshipStatus {
@@ -118,6 +148,12 @@ enum GameStatus {
   WAITING
   PLAYING
   FINISHED
+}
+
+enum SoloSessionStatus {
+  IN_PROGRESS
+  FINISHED
+  EXPIRED
 }
 
 enum Role {
@@ -139,4 +175,3 @@ model RefreshToken {
   expiresAt DateTime
   createdAt DateTime @default(now())
 }
-

@@ -12,7 +12,8 @@ http:
       {
         "email": "test@example.com",
         "password": "Oasis91350?",
-        "username": "Jean Dupont"
+        "username": "Jean Dupont",
+        "lang": "en"
       }
   auth: inherit
 
