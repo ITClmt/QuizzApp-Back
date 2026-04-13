@@ -279,17 +279,20 @@ export class QuizService {
         data: soloAnswersData,
         skipDuplicates: true,
       }),
+
       this.prisma.soloSession.update({
         where: { id: sessionId },
         data: { status: "FINISHED" },
       }),
-    ]);
 
-    await Promise.all(
-      Object.entries(scoresByDifficulty).map(([difficulty, value]) =>
-        this.scoreService.addScore(userId, difficulty as Difficulty, value),
+      ...Object.entries(scoresByDifficulty).map(([difficulty, value]) =>
+        this.scoreService.getUpsertOperation(
+          userId,
+          difficulty as Difficulty,
+          value,
+        ),
       ),
-    );
+    ]);
 
     // Retourne le récapitulatif formaté
     return {

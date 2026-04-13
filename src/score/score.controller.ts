@@ -1,5 +1,4 @@
 import { Controller, Get, Param, Query } from "@nestjs/common";
-import { Public } from "src/auth/decorators/public.decorator";
 import { Difficulty } from "src/generated/prisma/client";
 import { ScoreService } from "./score.service";
 

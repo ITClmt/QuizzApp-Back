@@ -11,6 +11,14 @@ import type {
 export class ScoreService {
   constructor(private readonly prisma: PrismaService) {}
 
+  getUpsertOperation(userId: string, difficulty: Difficulty, points: number) {
+    return this.prisma.score.upsert({
+      where: { userId_difficulty: { userId, difficulty } },
+      update: { value: { increment: points } },
+      create: { userId, difficulty, value: points },
+    });
+  }
+
   async getUserScores(userId: string): Promise<UserScoresResponse> {
     const scores = await this.prisma.score.findMany({
       where: { userId },
@@ -36,11 +44,7 @@ export class ScoreService {
     difficulty: Difficulty,
     points: number,
   ): Promise<ScoreResponse> {
-    const score = await this.prisma.score.upsert({
-      where: { userId_difficulty: { userId, difficulty } },
-      update: { value: { increment: points } },
-      create: { userId, difficulty, value: points },
-    });
+    const score = await this.getUpsertOperation(userId, difficulty, points);
 
     return {
       id: score.id,
