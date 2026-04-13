@@ -9,3 +9,8 @@ services:
       POSTGRES_DB: nestdb
     ports:
       - "${DB_PORT}:5432"
+    volumes:
+      - nestdb_data:/var/lib/postgresql/data
+
+volumes:
+  nestdb_data:
