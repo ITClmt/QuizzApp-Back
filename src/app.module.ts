@@ -10,6 +10,7 @@ import { PrismaModule } from './prisma/prisma.module';
 import { QuizController } from './quiz/quiz.controller';
 import { QuizModule } from './quiz/quiz.module';
 import { UsersModule } from './users/users.module';
+import { ScoreModule } from './score/score.module';
 
 @Module({
 	imports: [
@@ -31,6 +32,7 @@ import { UsersModule } from './users/users.module';
 		UsersModule,
 		AuthModule,
 		QuizModule,
+		ScoreModule,
 	],
 	controllers: [AppController, QuizController],
 	providers: [AppService, { provide: APP_GUARD, useClass: ThrottlerGuard }],

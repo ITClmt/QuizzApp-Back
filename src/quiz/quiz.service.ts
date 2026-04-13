@@ -10,6 +10,7 @@ import he from "he";
 import { firstValueFrom } from "rxjs";
 import { Difficulty, Question } from "../generated/prisma/client";
 import { PrismaService } from "../prisma/prisma.service";
+import { ScoreService } from "../score/score.service";
 import { AnswerDto } from "./dto/finish-session.dto";
 import { OtdQuestion, OtdResponse } from "./interfaces/otd-question.interface";
 import { SanitizedQuestion } from "./interfaces/question.interface";
@@ -24,6 +25,7 @@ export class QuizService {
   constructor(
     private readonly httpService: HttpService,
     private readonly prisma: PrismaService,
+    private readonly scoreService: ScoreService,
   ) {}
 
   async getQuestions(
@@ -272,31 +274,22 @@ export class QuizService {
       });
     }
 
-    // Tout en une seule transaction
     await this.prisma.$transaction([
-      // Crée tous les SoloAnswer en batch
       this.prisma.soloAnswer.createMany({
         data: soloAnswersData,
         skipDuplicates: true,
       }),
-
-      // Crée les scores par difficulté
-      ...Object.entries(scoresByDifficulty).map(([difficulty, value]) =>
-        this.prisma.score.create({
-          data: {
-            userId,
-            difficulty: difficulty as Difficulty,
-            value,
-          },
-        }),
-      ),
-
-      // Marque la session comme terminée
       this.prisma.soloSession.update({
         where: { id: sessionId },
         data: { status: "FINISHED" },
       }),
     ]);
+
+    await Promise.all(
+      Object.entries(scoresByDifficulty).map(([difficulty, value]) =>
+        this.scoreService.addScore(userId, difficulty as Difficulty, value),
+      ),
+    );
 
     // Retourne le récapitulatif formaté
     return {
