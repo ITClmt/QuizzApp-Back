@@ -1,7 +1,11 @@
 import { Injectable } from "@nestjs/common";
 import { Difficulty } from "src/generated/prisma/client";
 import { PrismaService } from "src/prisma/prisma.service";
-import type { ScoreResponse, UserScoresResponse } from "./interfaces";
+import type {
+  LeaderboardEntry,
+  ScoreResponse,
+  UserScoresResponse,
+} from "./interfaces";
 
 @Injectable()
 export class ScoreService {
@@ -44,5 +48,33 @@ export class ScoreService {
       difficulty: score.difficulty,
       createdAt: score.createdAt,
     };
+  }
+
+  async getLeaderboard(difficulty: Difficulty): Promise<LeaderboardEntry[]> {
+    const scores = await this.prisma.score.findMany({
+      where: { difficulty },
+      include: {
+        user: {
+          select: {
+            username: true,
+            avatarSlug: true,
+          },
+        },
+      },
+      orderBy: { value: "desc" },
+      take: 10,
+    });
+
+    return scores.map((s) => ({
+      id: s.id,
+      value: s.value,
+      difficulty: s.difficulty,
+      userData: {
+        id: s.userId,
+        username: s.user.username,
+        avatarSlug: s.user.avatarSlug,
+      },
+      createdAt: s.createdAt,
+    }));
   }
 }
