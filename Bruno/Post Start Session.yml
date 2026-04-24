@@ -5,20 +5,17 @@ info:
 
 http:
   method: POST
-  url: http://localhost:3000/quiz/start?difficulty=easy&category=15
+  url: http://localhost:3000/quiz/start?difficulty=medium&category=15
   params:
     - name: difficulty
-      value: easy
+      value: medium
       type: query
     - name: category
       value: "15"
       type: query
   auth:
     type: bearer
-    token: |-
-      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyMzNiMDE0Ni05N2Q1LTRhZDUtYmM1OS05NzIwYzk1MmU4MjkiLCJlbWFpbCI6InRlc3RAZXhhbXBsZS5jb20iLCJyb2xlIjoiVVNFUiIsInVzZXJuYW1lIjoiSmVhbiBEdXBvbnQiLCJsYW5nIjoiZW4iLCJpYXQiOjE3NzYxMTY2MjIsImV4cCI6MTc3NjExNzUyMn0.U2GIEnwlDs8N-l8Z7Zp7CYYsDre8ryhsc9VXVb-2YCU
-        "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyMzNiMDE0Ni05N2Q1LTRhZDUtYmM1OS05NzIwYzk1MmU4MjkiLCJlbWFpbCI6InRlc3RAZXhhbXBsZS5jb20iLCJyb2xlIjoiVVNFUiIsInVzZXJuYW1lIjoiSmVhbiBEdXBvbnQiLCJsYW5nIjoiZW4iLCJpYXQiOjE3NzYxMTY2MjIsImV4cCI6MTc3NjExNzUyMn0.U2GIEnwlDs8N-l8Z7Zp7CYYsDre8ryhsc9VXVb-2YCU
-        "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyMzNiMDE0Ni05N2Q1LTRhZDUtYmM1OS05NzIwYzk1MmU4MjkiLCJlbWFpbCI6InRlc3RAZXhhbXBsZS5jb20iLCJyb2xlIjoiVVNFUiIsInVzZXJuYW1lIjoiSmVhbiBEdXBvbnQiLCJsYW5nIjoiZW4iLCJpYXQiOjE3NzYxMTY2MjIsImV4cCI6MTc3NjExNzUyMn0.U2GIEnwlDs8N-l8Z7Zp7CYYsDre8ryhsc9VXVb-2YCU
+    token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyMzNiMDE0Ni05N2Q1LTRhZDUtYmM1OS05NzIwYzk1MmU4MjkiLCJlbWFpbCI6InRlc3RAZXhhbXBsZS5jb20iLCJyb2xlIjoiVVNFUiIsInVzZXJuYW1lIjoiSmVhbiBEdXBvbnQiLCJsYW5nIjoiZW4iLCJpYXQiOjE3NzYxMTY4NDAsImV4cCI6MTc3NjExNzc0MH0.JR-QJeyRqCYT2aB00b0CxorqlIYO_k6S4ai8CLQ8VYc
 
 settings:
   encodeUrl: true

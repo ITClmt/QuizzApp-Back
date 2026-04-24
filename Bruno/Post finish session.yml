@@ -10,21 +10,21 @@ http:
     type: json
     data: |
       {
-        "sessionId": "ada7fd6f-246c-4001-a0f9-c3c9eb41a247",
+        "sessionId": "e0a025b4-7d61-4af0-a8a8-1f908ade6e42",
         "answers": [
           {
-            "questionId": "524919ea-d56c-4480-a813-11218e5bc79b",
+            "questionId": "bd6fa7d7-47e2-4d6a-958d-9a254d9dd768",
             "answerIndex": 3
           },
           {
-            "questionId": "93c84b05-a695-4e20-8d9c-cc77b9480685",
+            "questionId": "63b0b8bf-f83a-4f6e-b824-0a156611b5e1",
             "answerIndex": 2
           }
         ]
       }
   auth:
     type: bearer
-    token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI5NjBkMDA2ZC04MDcyLTQ5OGQtOGM5Ny04NjczOWU2ODYyM2EiLCJlbWFpbCI6InRlc3RAZXhhbXBsZS5jb20iLCJyb2xlIjoiVVNFUiIsInVzZXJuYW1lIjoiSmVhbiBEdXBvbnQiLCJsYW5nIjoiZW4iLCJpYXQiOjE3NzUyMTkwNjEsImV4cCI6MTc3NTIxOTk2MX0.a2mAW1TipH9KnLmpM7mhVUEotPZ4x1orjjArwbLbVmw
+    token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyMzNiMDE0Ni05N2Q1LTRhZDUtYmM1OS05NzIwYzk1MmU4MjkiLCJlbWFpbCI6InRlc3RAZXhhbXBsZS5jb20iLCJyb2xlIjoiVVNFUiIsInVzZXJuYW1lIjoiSmVhbiBEdXBvbnQiLCJsYW5nIjoiZW4iLCJpYXQiOjE3NzYxMTY4NDAsImV4cCI6MTc3NjExNzc0MH0.JR-QJeyRqCYT2aB00b0CxorqlIYO_k6S4ai8CLQ8VYc
 
 settings:
   encodeUrl: true

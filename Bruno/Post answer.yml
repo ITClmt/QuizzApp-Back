@@ -10,12 +10,12 @@ http:
     type: json
     data: |-
       {
-        "questionId": "1e947a21-174b-4904-ad99-28344fcb9a71",
+        "questionId": "166a96af-98fe-43a0-9b85-10f5ce8829d2",
         "answerIndex": 1
       }
   auth:
     type: bearer
-    token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIwZjFiNzRmOS0zYjQ1LTQxZDctOWE3My1jNzZmOTRmOGNiNmYiLCJlbWFpbCI6InRlc3RAZXhhbXBsZS5jb20iLCJyb2xlIjoiVVNFUiIsInVzZXJuYW1lIjoiSmVhbiBEdXBvbnQiLCJsYW5nIjoiZW4iLCJpYXQiOjE3NzUyMDg0MDAsImV4cCI6MTc3NTIwOTMwMH0.U5mM6w1uJ_bJnrUPXrWpMlepXxJNIYb6dfKI3DmmLiM
+    token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyMzNiMDE0Ni05N2Q1LTRhZDUtYmM1OS05NzIwYzk1MmU4MjkiLCJlbWFpbCI6InRlc3RAZXhhbXBsZS5jb20iLCJyb2xlIjoiVVNFUiIsInVzZXJuYW1lIjoiSmVhbiBEdXBvbnQiLCJsYW5nIjoiZW4iLCJpYXQiOjE3NzYxMTY1NTgsImV4cCI6MTc3NjExNzQ1OH0.g3qa-Y7tOlkJc8Wd3g3tJDMUpZA7CZ1BKK9EiLRAsyI
 
 settings:
   encodeUrl: true
