@@ -22,8 +22,9 @@ export class AuthService {
     role: string,
     username: string,
     lang: string,
+    avatarSlug: string,
   ) {
-    const payload = { sub: userId, email, role, username, lang };
+    const payload = { sub: userId, email, role, username, lang, avatarSlug };
     const refreshPayload = { sub: userId };
 
     const accessToken = await this.jwtService.signAsync(payload);
@@ -84,6 +85,7 @@ export class AuthService {
       newUser.role,
       newUser.username,
       newUser.lang,
+      newUser.avatarSlug,
     );
   }
 
@@ -102,6 +104,7 @@ export class AuthService {
       user.role,
       user.username,
       user.lang,
+      user.avatarSlug,
     );
   }
 
@@ -122,6 +125,7 @@ export class AuthService {
       user.role,
       user.username,
       user.lang,
+      user.avatarSlug,
     );
   }
 
