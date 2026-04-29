@@ -59,13 +59,13 @@ export class UsersService {
 	}
 
 	async create(createUserDto: CreateUserDto) {
-		const { email, password, username } = createUserDto;
+		const { email, password, username, lang } = createUserDto;
 
 		const hashedPassword = await argon2.hash(password);
 
 		try {
 			return await this.prisma.user.create({
-				data: { email, password: hashedPassword, username },
+				data: { email, password: hashedPassword, username, lang },
 				select: userSelect,
 			});
 		} catch (error) {
