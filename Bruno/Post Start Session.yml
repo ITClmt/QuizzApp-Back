@@ -5,7 +5,7 @@ info:
 
 http:
   method: POST
-  url: http://localhost:3000/quiz/start?difficulty=medium&category=15
+  url: http://localhost:3000/api/quiz/start?difficulty=medium&category=15
   params:
     - name: difficulty
       value: medium
@@ -15,7 +15,7 @@ http:
       type: query
   auth:
     type: bearer
-    token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyMzNiMDE0Ni05N2Q1LTRhZDUtYmM1OS05NzIwYzk1MmU4MjkiLCJlbWFpbCI6InRlc3RAZXhhbXBsZS5jb20iLCJyb2xlIjoiVVNFUiIsInVzZXJuYW1lIjoiSmVhbiBEdXBvbnQiLCJsYW5nIjoiZW4iLCJpYXQiOjE3NzYxMTY4NDAsImV4cCI6MTc3NjExNzc0MH0.JR-QJeyRqCYT2aB00b0CxorqlIYO_k6S4ai8CLQ8VYc
+    token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyMzNiMDE0Ni05N2Q1LTRhZDUtYmM1OS05NzIwYzk1MmU4MjkiLCJlbWFpbCI6InRlc3RAZXhhbXBsZS5jb20iLCJyb2xlIjoiVVNFUiIsInVzZXJuYW1lIjoiSmVhbiBEdXBvbnQiLCJsYW5nIjoiZW4iLCJhdmF0YXJTbHVnIjoiZGVmYXVsdCIsImlhdCI6MTc3NzcyODE5NSwiZXhwIjoxNzc3NzI5MDk1fQ.KQ24Xhm2L0DF4ID34WpmJh9oDeK07KwMBE5b9uJoa3A
 
 settings:
   encodeUrl: true

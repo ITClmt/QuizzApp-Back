@@ -19,7 +19,7 @@ import { SanitizedQuestion } from "./interfaces/question.interface";
 export class QuizService {
   private readonly logger = new Logger(QuizService.name);
   private readonly OTD_URL = "https://opentdb.com/api.php";
-  private readonly QUESTIONS_PER_GAME = 2;
+  private readonly QUESTIONS_PER_GAME = 5;
   private readonly GAME_DURATION_MS = 3 * 60 * 1000; // 3 minutes
 
   constructor(

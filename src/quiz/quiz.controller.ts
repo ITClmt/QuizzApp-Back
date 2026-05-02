@@ -27,12 +27,8 @@ export class QuizController {
   ) {
     const difficulty = query.difficulty ?? undefined;
     const category = query.category ?? undefined;
-    return this.quizService.startSession(
-      user.sub,
-      user.lang,
-      difficulty,
-      category,
-    );
+    const lang = "en";
+    return this.quizService.startSession(user.sub, lang, difficulty, category);
   }
 
   @Post("finish")
