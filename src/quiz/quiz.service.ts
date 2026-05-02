@@ -208,6 +208,10 @@ export class QuizService {
   async finishSession(userId: string, sessionId: string, answers: AnswerDto[]) {
     const session = await this.getActiveSession(userId, sessionId);
 
+    if (!session) {
+      throw new NotFoundException("Session not found");
+    }
+
     // Récupère toutes les questions en une seule requête
     const questionIds = answers.map((a) => a.questionId);
     const questions = await this.prisma.question.findMany({
@@ -282,7 +286,7 @@ export class QuizService {
 
       this.prisma.soloSession.update({
         where: { id: sessionId },
-        data: { status: "FINISHED" },
+        data: { status: "EXPIRED" },
       }),
 
       ...Object.entries(scoresByDifficulty).map(([difficulty, value]) =>
@@ -304,6 +308,25 @@ export class QuizService {
         }),
       ),
       answers: answersResult,
+    };
+  }
+
+  async cancelSession(userId: string, sessionId: string) {
+    const session = await this.getActiveSession(userId, sessionId);
+
+    if (!session) {
+      throw new NotFoundException("Session not found");
+    }
+
+    await this.prisma.soloSession.update({
+      where: { id: sessionId },
+      data: { status: "FINISHED" },
+    });
+
+    return {
+      sessionId: session.id,
+      status: "FINISHED" as const,
+      message: "Session finished without saving answers",
     };
   }
 

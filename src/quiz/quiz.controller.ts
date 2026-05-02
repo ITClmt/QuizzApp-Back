@@ -43,6 +43,14 @@ export class QuizController {
     );
   }
 
+  @Post("cancel")
+  async cancelSession(
+    @Body() body: { sessionId: string },
+    @CurrentUser() user: JwtPayload,
+  ) {
+    return this.quizService.cancelSession(user.sub, body.sessionId);
+  }
+
   @Post("answer")
   async validateAnswer(
     @Body() body: PostAnswerDto,
