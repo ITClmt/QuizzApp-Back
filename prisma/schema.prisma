@@ -47,6 +47,10 @@ model Question {
 
   gameQuestions GameQuestion[]
   soloAnswers   SoloAnswer[]
+
+  @@index([difficulty])
+  @@index([category])
+  @@index([category, difficulty])
 }
 
 model Score {
@@ -60,6 +64,7 @@ model Score {
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, difficulty])
+  @@index([difficulty, value])
 }
 
 model Friendship {
@@ -125,6 +130,9 @@ model SoloSession {
   userId  String
   user    User         @relation(fields: [userId], references: [id], onDelete: Cascade)
   answers SoloAnswer[]
+
+  @@index([userId, status])
+  @@index([status, expiresAt])
 }
 
 model SoloAnswer {
