@@ -5,6 +5,7 @@ import {
   Injectable,
   Logger,
   NotFoundException,
+  ServiceUnavailableException,
 } from "@nestjs/common";
 import he from "he";
 import { firstValueFrom } from "rxjs";
@@ -79,15 +80,26 @@ export class QuizService {
   ) {
     this.logger.log(`Fetching ${amount} questions from Open Trivia DB`);
 
-    const { data } = await firstValueFrom(
-      this.httpService.get<OtdResponse>(this.OTD_URL, {
-        params: { amount, difficulty, category },
-      }),
-    );
+    let data: OtdResponse;
+    try {
+      const response = await firstValueFrom(
+        this.httpService.get<OtdResponse>(this.OTD_URL, {
+          params: { amount, difficulty, category },
+        }),
+      );
+      data = response.data;
+    } catch (error) {
+      this.logger.error(`OTD API unreachable: ${error.message}`);
+      throw new ServiceUnavailableException(
+        "Quiz service temporarily unavailable",
+      );
+    }
 
     if (data.response_code !== 0) {
       this.logger.error(`OTD response code: ${data.response_code}`);
-      return [];
+      throw new ServiceUnavailableException(
+        "Quiz service temporarily unavailable",
+      );
     }
 
     // Sauvegarde en DB et retourne les entités créées
