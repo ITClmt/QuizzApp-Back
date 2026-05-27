@@ -1,0 +1,23 @@
+info:
+  name: POST Cancel session
+  type: http
+  seq: 10
+
+http:
+  method: POST
+  url: http://localhost:3000/api/quiz/cancel
+  body:
+    type: json
+    data: |-
+      {
+        "sessionId": "078a9888-53c7-42e5-9866-750fdbb28e60"
+      }
+  auth:
+    type: bearer
+    token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyMzNiMDE0Ni05N2Q1LTRhZDUtYmM1OS05NzIwYzk1MmU4MjkiLCJlbWFpbCI6InRlc3RAZXhhbXBsZS5jb20iLCJyb2xlIjoiVVNFUiIsInVzZXJuYW1lIjoiSmVhbiBEdXBvbnQiLCJsYW5nIjoiZW4iLCJhdmF0YXJTbHVnIjoiZGVmYXVsdCIsImlhdCI6MTc3NzcyOTcxMCwiZXhwIjoxNzc3NzMwNjEwfQ.DEgj_VKlHq1McYNeype9QgYHGste4QIbCNJ4CfQ1hZw
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
