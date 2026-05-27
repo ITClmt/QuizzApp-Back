@@ -68,7 +68,10 @@ export class AuthService {
     });
 
     for (const stored of storedTokens) {
-      if (await argon2.verify(stored.token, refreshToken)) {
+      if (
+        stored.expiresAt > new Date() &&
+        (await argon2.verify(stored.token, refreshToken))
+      ) {
         return { payload, matchedToken: stored };
       }
     }
