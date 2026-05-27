@@ -1,4 +1,4 @@
-import { Controller, Get, Param, Query } from "@nestjs/common";
+import { Controller, Get, Param, ParseUUIDPipe, Query } from "@nestjs/common";
 import { ScoreService } from "./score.service";
 import { LeaderboardQueryDto } from "./dto/leaderboard-query.dto";
 
@@ -7,8 +7,8 @@ export class ScoreController {
   constructor(private readonly scoreService: ScoreService) {}
 
   @Get("user/:id")
-  async getUserScore(@Param() params: { id: string }) {
-    return this.scoreService.getUserScores(params.id);
+  async getUserScore(@Param("id", ParseUUIDPipe) id: string) {
+    return this.scoreService.getUserScores(id);
   }
 
   @Get("leaderboard")
