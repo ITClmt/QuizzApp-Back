@@ -15,12 +15,12 @@ import { LoginDto } from "./dto/login.dto";
 import { RefreshTokenDto } from "./dto/refresh_token.dto";
 import type { JwtPayload } from "./types/jwt-payload.type";
 
-@Throttle({ auth: { ttl: 60000, limit: 5 } })
+@Throttle({ auth: {} })
 @Controller("auth")
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
-  @Throttle({ auth: { limit: 3, ttl: 60000 } })
+  @Throttle({ auth: { limit: 5, ttl: 900000 } })
   @Public()
   @Post("login")
   @HttpCode(HttpStatus.OK)

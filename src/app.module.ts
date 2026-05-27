@@ -20,12 +20,12 @@ import { ScoreModule } from './score/score.module';
 			{
 				name: 'global',
 				ttl: 60000,
-				limit: 10,
+				limit: 60,
 			},
 			{
 				name: 'auth',
-				ttl: 60000,
-				limit: 5,
+				ttl: 900000, // 15 minutes
+				limit: 10,
 			},
 		]),
 		PrismaModule,
