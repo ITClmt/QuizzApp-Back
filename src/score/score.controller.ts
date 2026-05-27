@@ -1,6 +1,6 @@
 import { Controller, Get, Param, Query } from "@nestjs/common";
-import { Difficulty } from "src/generated/prisma/client";
 import { ScoreService } from "./score.service";
+import { LeaderboardQueryDto } from "./dto/leaderboard-query.dto";
 
 @Controller("score")
 export class ScoreController {
@@ -12,8 +12,7 @@ export class ScoreController {
   }
 
   @Get("leaderboard")
-  async getLeaderboard(@Query() query: { difficulty: Difficulty }) {
-    const difficulty = query.difficulty ?? undefined;
-    return this.scoreService.getLeaderboard(difficulty);
+  async getLeaderboard(@Query() query: LeaderboardQueryDto) {
+    return this.scoreService.getLeaderboard(query.difficulty);
   }
 }
