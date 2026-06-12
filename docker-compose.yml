@@ -10,7 +10,30 @@ services:
     ports:
       - "${DB_PORT}:5432"
     volumes:
-      - nestdb_data:/var/lib/postgresql/data
+      - nestdb_data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U nestuser -d nestdb"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 15s
+
+  api:
+    build: .
+    container_name: nest-api
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: "postgresql://nestuser:nestpassword@dev-db:5432/nestdb?schema=public"
+      JWT_SECRET: "${JWT_SECRET}"
+      JWT_REFRESH_SECRET: "${JWT_REFRESH_SECRET}"
+    ports:
+      - "3000:3000"
+    depends_on:
+      dev-db:
+        condition: service_healthy
+    volumes:
+      - .:/app
+      - /app/node_modules
 
 volumes:
   nestdb_data:
