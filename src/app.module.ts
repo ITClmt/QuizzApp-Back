@@ -20,7 +20,7 @@ import { ScoreModule } from './score/score.module';
 			{
 				name: 'global',
 				ttl: 60000,
-				limit: 60,
+				limit: 300,
 			},
 			{
 				name: 'auth',
