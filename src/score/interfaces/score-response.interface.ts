@@ -24,3 +24,15 @@ export interface LeaderboardEntry {
   };
   createdAt: Date;
 }
+
+export interface UserRankResponse {
+  rank: number;
+  score: number;
+  difficulty?: Difficulty;
+  percentage: number;
+}
+
+export interface RankResponse {
+  rank: number;
+  value: number;
+}

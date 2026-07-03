@@ -3,6 +3,7 @@ import { Difficulty } from "src/generated/prisma/client";
 import { PrismaService } from "src/prisma/prisma.service";
 import type {
   LeaderboardEntry,
+  RankResponse,
   ScoreResponse,
   UserScoresResponse,
 } from "./interfaces";
@@ -52,6 +53,23 @@ export class ScoreService {
       difficulty: score.difficulty,
       createdAt: score.createdAt,
     };
+  }
+
+  async getMyRank(
+    userId: string,
+    difficulty: Difficulty,
+  ): Promise<RankResponse | null> {
+    const myScore = await this.prisma.score.findUnique({
+      where: { userId_difficulty: { userId, difficulty } },
+    });
+
+    if (!myScore) return null;
+
+    const above = await this.prisma.score.count({
+      where: { difficulty, value: { gt: myScore.value } },
+    });
+
+    return { rank: above + 1, value: myScore.value };
   }
 
   async getLeaderboard(difficulty: Difficulty): Promise<LeaderboardEntry[]> {
