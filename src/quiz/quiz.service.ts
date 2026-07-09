@@ -212,6 +212,7 @@ export class QuizService {
 
     return {
       sessionId: session.id,
+      createdAt: session.createdAt,
       expiresAt: session.expiresAt,
       questions,
     };
