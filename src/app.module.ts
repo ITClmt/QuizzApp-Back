@@ -9,8 +9,8 @@ import { AuthModule } from './auth/auth.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { QuizController } from './quiz/quiz.controller';
 import { QuizModule } from './quiz/quiz.module';
-import { UsersModule } from './users/users.module';
 import { ScoreModule } from './score/score.module';
+import { UsersModule } from './users/users.module';
 
 @Module({
 	imports: [
