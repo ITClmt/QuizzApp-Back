@@ -25,7 +25,7 @@ export class QuizController {
 			throw new ForbiddenException('Category not unlocked for your level');
 		}
 	}
-	
+
 	@Get('categories')
 	getCategories(@CurrentUser() user: JwtPayload) {
 		const level = getUserLevel(user.sub);
