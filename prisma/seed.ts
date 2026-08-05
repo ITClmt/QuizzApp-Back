@@ -2,6 +2,7 @@ import 'dotenv/config';
 import { PrismaPg } from '@prisma/adapter-pg';
 import * as argon2 from 'argon2';
 import { Difficulty, PrismaClient } from '../src/generated/prisma/client';
+import { XP_PER_DIFFICULTY } from '../src/quiz/constants/xp';
 
 const connectionString = `${process.env.DATABASE_URL}`;
 const prisma = new PrismaClient({
@@ -232,6 +233,7 @@ async function seedSoloQuizzes(
 	for (const user of users) {
 		const sessionsCount = randomInt(2, 4);
 		const scoreByDifficulty: Partial<Record<Difficulty, number>> = {};
+		let totalXp = 0;
 
 		for (let i = 0; i < sessionsCount; i++) {
 			const difficulty = DIFFICULTIES[randomInt(0, DIFFICULTIES.length - 1)];
@@ -269,12 +271,20 @@ async function seedSoloQuizzes(
 					},
 				});
 
-				if (isCorrect) correctCount++;
+				if (isCorrect) {
+					correctCount++;
+					totalXp += XP_PER_DIFFICULTY[difficulty];
+				}
 			}
 
 			scoreByDifficulty[difficulty] =
 				(scoreByDifficulty[difficulty] ?? 0) + correctCount;
 		}
+
+		await prisma.user.update({
+			where: { id: user.id },
+			data: { xp: totalXp },
+		});
 
 		for (const [difficulty, value] of Object.entries(scoreByDifficulty)) {
 			await prisma.score.upsert({
