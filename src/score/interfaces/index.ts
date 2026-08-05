@@ -1,4 +1,6 @@
 export type {
+	GlobalLeaderboardEntry,
+	GlobalRankResponse,
 	LeaderboardEntry,
 	RankResponse,
 	ScoreResponse,

@@ -1,7 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { Difficulty } from 'src/generated/prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { getLevelFromXp } from 'src/quiz/utils/level.util';
 import type {
+	GlobalLeaderboardEntry,
+	GlobalRankResponse,
 	LeaderboardEntry,
 	RankResponse,
 	ScoreResponse,
@@ -98,5 +101,32 @@ export class ScoreService {
 			},
 			createdAt: s.createdAt,
 		}));
+	}
+
+	// Pas d'anti-grind en v1 (décision produit) : à revoir si le grind pur
+	// (spam de sessions faciles) s'avère un vrai problème sur ce classement.
+	async getGlobalLeaderboard(): Promise<GlobalLeaderboardEntry[]> {
+		const users = await this.prisma.user.findMany({
+			orderBy: { xp: 'desc' },
+			take: 10,
+			select: { id: true, username: true, avatarSlug: true, xp: true },
+		});
+
+		return users.map((u) => ({ ...u, level: getLevelFromXp(u.xp) }));
+	}
+
+	async getMyGlobalRank(userId: string): Promise<GlobalRankResponse | null> {
+		const me = await this.prisma.user.findUnique({
+			where: { id: userId },
+			select: { xp: true },
+		});
+
+		if (!me) return null;
+
+		const above = await this.prisma.user.count({
+			where: { xp: { gt: me.xp } },
+		});
+
+		return { rank: above + 1, xp: me.xp, level: getLevelFromXp(me.xp) };
 	}
 }

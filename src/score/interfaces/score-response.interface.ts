@@ -36,3 +36,17 @@ export interface RankResponse {
 	rank: number;
 	value: number;
 }
+
+export interface GlobalLeaderboardEntry {
+	id: string;
+	username: string;
+	avatarSlug: string;
+	xp: number;
+	level: number;
+}
+
+export interface GlobalRankResponse {
+	rank: number;
+	xp: number;
+	level: number;
+}

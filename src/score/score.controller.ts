@@ -13,9 +13,19 @@ export class ScoreController {
 		return this.scoreService.getUserScores(id);
 	}
 
+	@Get('leaderboard/global')
+	async getGlobalLeaderboard() {
+		return this.scoreService.getGlobalLeaderboard();
+	}
+
 	@Get('leaderboard')
 	async getLeaderboard(@Query() query: LeaderboardQueryDto) {
 		return this.scoreService.getLeaderboard(query.difficulty);
+	}
+
+	@Get('my-rank/global')
+	async getMyGlobalRank(@CurrentUser() user: JwtPayload) {
+		return this.scoreService.getMyGlobalRank(user.sub);
 	}
 
 	@Get('my-rank')

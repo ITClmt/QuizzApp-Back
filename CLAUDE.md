@@ -112,6 +112,9 @@ POST   /api/quiz/answer
 
 GET    /api/score/user/:id                ParseUUIDPipe — scores are public
 GET    /api/score/leaderboard             ?difficulty (required, IsEnum)
+GET    /api/score/leaderboard/global      top 10 by XP
+GET    /api/score/my-rank                 ?difficulty (required, IsEnum)
+GET    /api/score/my-rank/global          rank by XP
 ```
 
 ## Database schema (key models)
