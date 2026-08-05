@@ -18,14 +18,9 @@ import { UsersModule } from './users/users.module';
 		ScheduleModule.forRoot(),
 		ThrottlerModule.forRoot([
 			{
-				name: 'global',
+				name: 'default',
 				ttl: 60000,
 				limit: 600,
-			},
-			{
-				name: 'auth',
-				ttl: 900000, // 15 minutes
-				limit: 10,
 			},
 		]),
 		PrismaModule,

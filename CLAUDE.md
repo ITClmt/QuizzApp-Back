@@ -77,21 +77,32 @@ Refresh token: 7-day JWT, stored hashed in DB, rotated on each use, checked agai
 
 ## Rate limiting
 
-Configured in `ThrottlerModule` (app.module.ts):
+Configured in `ThrottlerModule` (app.module.ts) — a **single** named throttler:
 
-| Throttler | TTL | Limit |
+| Throttler | TTL | Default limit |
 |---|---|---|
-| `global` | 60s | 600 req |
-| `auth` | 15 min | 10 req |
-| `login` (override) | 15 min | 5 req |
+| `default` | 60s | 600 req |
 
-Auth controller applies `@Throttle({ auth: {} })` by default. Login overrides to 5/15 min.
+Deliberately only one throttler is registered. `ThrottlerGuard` is global (`APP_GUARD`),
+and every named throttler in `forRoot()` applies to **every route by default** — a route
+is NOT scoped to only the throttlers it references via `@Throttle()`. A second `auth`
+bucket (10 req/15min) used to exist for login/register/refresh, but because nothing
+opted the other controllers out, it silently rate-limited the *entire* API to 10
+req/15min, not just `/auth/*` — this caused hard-to-diagnose bugs (stale XP bar,
+leaderboard "fail to load") that only a container restart would clear (in-memory
+counters, no Redis). Fixed 2026-08-05 by removing the second bucket entirely and
+tightening the single `default` throttler per-route instead: `AuthController`'s
+`login`/`register`/`refresh`/`logout` handlers each carry their own
+`@Throttle({ default: { limit, ttl } })` override (5/15min for login, 10/15min for the
+others); `getProfile` and every other controller are left undecorated and simply use
+the loose 600/60s default. **Prefer this pattern going forward — per-route `@Throttle()`
+overrides on the single `default` throttler — over adding another named throttler**,
+since a new named throttler again applies everywhere unless every other controller is
+updated to skip it.
 
-In-memory counters (no Redis) — a restart clears all throttle state instantly. The
-`global` bucket applies to every route (ThrottlerGuard is registered as `APP_GUARD`),
-including polling-style GETs like `/auth/profile`, which several screens now refetch
-on React Navigation focus (Navbar, Profile, Home, Leaderboard) — keep this in mind
-before adding more focus-triggered refetches.
+Polling-style GETs like `/auth/profile` are refetched on React Navigation focus by
+several screens (Navbar, Profile, Home, Leaderboard) — keep this in mind before adding
+more focus-triggered refetches, even against the looser 600/60s default.
 
 ## API routes
 

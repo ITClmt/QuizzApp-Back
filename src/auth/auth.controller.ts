@@ -15,12 +15,11 @@ import { LoginDto } from './dto/login.dto';
 import { RefreshTokenDto } from './dto/refresh_token.dto';
 import type { JwtPayload } from './types/jwt-payload.type';
 
-@Throttle({ auth: {} })
 @Controller('auth')
 export class AuthController {
 	constructor(private readonly authService: AuthService) {}
 
-	@Throttle({ auth: { limit: 5, ttl: 900000 } })
+	@Throttle({ default: { limit: 5, ttl: 900000 } })
 	@Public()
 	@Post('login')
 	@HttpCode(HttpStatus.OK)
@@ -34,6 +33,7 @@ export class AuthController {
 		return this.authService.getProfile(user.sub);
 	}
 
+	@Throttle({ default: { limit: 10, ttl: 900000 } })
 	@Public()
 	@Post('register')
 	@HttpCode(HttpStatus.CREATED)
@@ -41,6 +41,7 @@ export class AuthController {
 		return this.authService.register(createUserDto);
 	}
 
+	@Throttle({ default: { limit: 10, ttl: 900000 } })
 	@Public()
 	@Post('refresh')
 	@HttpCode(HttpStatus.OK)
@@ -48,6 +49,7 @@ export class AuthController {
 		return this.authService.refreshTokens(data.refreshToken);
 	}
 
+	@Throttle({ default: { limit: 10, ttl: 900000 } })
 	@Post('logout')
 	@HttpCode(HttpStatus.NO_CONTENT)
 	async logout(@Body() data: RefreshTokenDto) {
