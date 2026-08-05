@@ -81,11 +81,17 @@ Configured in `ThrottlerModule` (app.module.ts):
 
 | Throttler | TTL | Limit |
 |---|---|---|
-| `global` | 60s | 60 req |
+| `global` | 60s | 600 req |
 | `auth` | 15 min | 10 req |
 | `login` (override) | 15 min | 5 req |
 
 Auth controller applies `@Throttle({ auth: {} })` by default. Login overrides to 5/15 min.
+
+In-memory counters (no Redis) — a restart clears all throttle state instantly. The
+`global` bucket applies to every route (ThrottlerGuard is registered as `APP_GUARD`),
+including polling-style GETs like `/auth/profile`, which several screens now refetch
+on React Navigation focus (Navbar, Profile, Home, Leaderboard) — keep this in mind
+before adding more focus-triggered refetches.
 
 ## API routes
 

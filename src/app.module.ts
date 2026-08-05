@@ -20,7 +20,7 @@ import { UsersModule } from './users/users.module';
 			{
 				name: 'global',
 				ttl: 60000,
-				limit: 300,
+				limit: 600,
 			},
 			{
 				name: 'auth',
