@@ -13,22 +13,22 @@ import { FinishSessionDto } from './dto/finish-session.dto';
 import { GetQuestionsDto } from './dto/get-questions.dto';
 import { PostAnswerDto } from './dto/post-answer.dto';
 import { QuizService } from './quiz.service';
-import { getUserLevel } from './utils/get-user-level';
 
 @Controller('quiz')
 export class QuizController {
 	constructor(private readonly quizService: QuizService) {}
 
-	private assertCategoryUnlocked(user: JwtPayload, category?: string) {
+	private async assertCategoryUnlocked(user: JwtPayload, category?: string) {
 		if (!category) return;
-		if (!isCategoryUnlocked(category, getUserLevel(user.sub))) {
+		const level = await this.quizService.getUserLevel(user.sub);
+		if (!isCategoryUnlocked(category, level)) {
 			throw new ForbiddenException('Category not unlocked for your level');
 		}
 	}
 
 	@Get('categories')
-	getCategories(@CurrentUser() user: JwtPayload) {
-		const level = getUserLevel(user.sub);
+	async getCategories(@CurrentUser() user: JwtPayload) {
+		const level = await this.quizService.getUserLevel(user.sub);
 		return QUIZ_CATEGORIES.map((category) => ({
 			...category,
 			unlocked: level >= category.unlockLevel,
@@ -42,7 +42,7 @@ export class QuizController {
 	) {
 		const difficulty = query.difficulty ?? undefined;
 		const category = query.category ?? undefined;
-		this.assertCategoryUnlocked(user, category);
+		await this.assertCategoryUnlocked(user, category);
 		return this.quizService.getQuestions(user.lang, difficulty, category);
 	}
 
@@ -53,7 +53,7 @@ export class QuizController {
 	) {
 		const difficulty = query.difficulty ?? undefined;
 		const category = query.category ?? undefined;
-		this.assertCategoryUnlocked(user, category);
+		await this.assertCategoryUnlocked(user, category);
 		const lang = 'en';
 		return this.quizService.startSession(user.sub, lang, difficulty, category);
 	}

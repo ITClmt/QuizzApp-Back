@@ -22,6 +22,7 @@ model User {
   avatarSlug    String         @default("default")
   role          Role           @default(USER)
   lang          String         @default("en")
+  xp            Int            @default(0)
   refreshTokens RefreshToken[]
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt

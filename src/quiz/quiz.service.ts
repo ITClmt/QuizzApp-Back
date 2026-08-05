@@ -12,9 +12,11 @@ import { firstValueFrom } from 'rxjs';
 import { Difficulty, Question } from '../generated/prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { ScoreService } from '../score/score.service';
+import { XP_PER_DIFFICULTY } from './constants/xp';
 import { AnswerDto } from './dto/finish-session.dto';
 import { OtdQuestion, OtdResponse } from './interfaces/otd-question.interface';
 import { SanitizedQuestion } from './interfaces/question.interface';
+import { getLevelFromXp } from './utils/level.util';
 
 @Injectable()
 export class QuizService {
@@ -28,6 +30,15 @@ export class QuizService {
 		private readonly prisma: PrismaService,
 		private readonly scoreService: ScoreService,
 	) {}
+
+	async getUserLevel(userId: string): Promise<number> {
+		const user = await this.prisma.user.findUniqueOrThrow({
+			where: { id: userId },
+			select: { xp: true },
+		});
+
+		return getLevelFromXp(user.xp);
+	}
 
 	async getQuestions(
 		lang: string = 'en',
@@ -251,6 +262,7 @@ export class QuizService {
 		}> = [];
 
 		let totalScore = 0;
+		let xpEarned = 0;
 
 		// Boucle unique pour traiter chaque réponse
 		for (const answer of answers) {
@@ -276,6 +288,7 @@ export class QuizService {
 				const diff = question.difficulty.toLowerCase() as Difficulty;
 				scoresByDifficulty[diff] = (scoresByDifficulty[diff] ?? 0) + 1;
 				totalScore++;
+				xpEarned += XP_PER_DIFFICULTY[diff];
 			}
 
 			// 3. Construit directement le retour visuel
@@ -290,6 +303,11 @@ export class QuizService {
 				correctAnswer: choices[question.correctIndex],
 			});
 		}
+
+		const { xp: xpBefore } = await this.prisma.user.findUniqueOrThrow({
+			where: { id: userId },
+			select: { xp: true },
+		});
 
 		await this.prisma.$transaction([
 			this.prisma.soloAnswer.createMany({
@@ -309,7 +327,19 @@ export class QuizService {
 					value,
 				),
 			),
+
+			...(xpEarned > 0
+				? [
+						this.prisma.user.update({
+							where: { id: userId },
+							data: { xp: { increment: xpEarned } },
+						}),
+					]
+				: []),
 		]);
+
+		const level = getLevelFromXp(xpBefore + xpEarned);
+		const leveledUp = level > getLevelFromXp(xpBefore);
 
 		// Retourne le récapitulatif formaté
 		return {
@@ -321,6 +351,9 @@ export class QuizService {
 				}),
 			),
 			answers: answersResult,
+			xpEarned,
+			level,
+			leveledUp,
 		};
 	}
 

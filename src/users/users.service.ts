@@ -6,6 +6,7 @@ import {
 import * as argon2 from 'argon2';
 import { Prisma } from 'src/generated/prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { getLevelFromXp, xpForLevel } from 'src/quiz/utils/level.util';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 
@@ -16,9 +17,20 @@ const userSelect = {
 	role: true,
 	lang: true,
 	avatarSlug: true,
+	xp: true,
 	createdAt: true,
 	updatedAt: true,
 };
+
+function withLevel<T extends { xp: number }>(user: T) {
+	const level = getLevelFromXp(user.xp);
+	return {
+		...user,
+		level,
+		xpForCurrentLevel: xpForLevel(level),
+		xpForNextLevel: xpForLevel(level + 1),
+	};
+}
 
 @Injectable()
 export class UsersService {
@@ -35,11 +47,12 @@ export class UsersService {
 	}
 
 	async findAll(params: { skip?: number; take?: number }) {
-		return this.prisma.user.findMany({
+		const users = await this.prisma.user.findMany({
 			...params,
 			select: userSelect,
 			orderBy: { createdAt: 'desc' },
 		});
+		return users.map(withLevel);
 	}
 
 	async findById(id: string) {
@@ -48,7 +61,7 @@ export class UsersService {
 			select: userSelect,
 		});
 		if (!user) throw new NotFoundException('Utilisateur non trouvé');
-		return user;
+		return withLevel(user);
 	}
 
 	// ⚠️ Intentionally returns the password hash — needed for auth verification
@@ -64,10 +77,11 @@ export class UsersService {
 		const hashedPassword = await argon2.hash(password);
 
 		try {
-			return await this.prisma.user.create({
+			const user = await this.prisma.user.create({
 				data: { email, password: hashedPassword, username, lang },
 				select: userSelect,
 			});
+			return withLevel(user);
 		} catch (error) {
 			this.handlePrismaError(error);
 		}
@@ -83,11 +97,12 @@ export class UsersService {
 		if (updateUserDto.lang !== undefined) data.lang = updateUserDto.lang;
 
 		try {
-			return await this.prisma.user.update({
+			const user = await this.prisma.user.update({
 				where: { id },
 				data,
 				select: userSelect,
 			});
+			return withLevel(user);
 		} catch (error) {
 			this.handlePrismaError(error);
 		}

@@ -103,6 +103,7 @@ GET    /api/users/:id
 PATCH  /api/users/:id                     owner or ADMIN only
 DELETE /api/users/:id                     owner or ADMIN only
 
+GET    /api/quiz/categories                curated OTD subset, unlock status per user level
 GET    /api/quiz/questions                ?difficulty&category
 POST   /api/quiz/start                    ?difficulty&category
 POST   /api/quiz/finish
@@ -115,7 +116,7 @@ GET    /api/score/leaderboard             ?difficulty (required, IsEnum)
 
 ## Database schema (key models)
 
-- **User** — `username` (unique), `email` (unique), `role` (USER|ADMIN), `lang`
+- **User** — `username` (unique), `email` (unique), `role` (USER|ADMIN), `lang`, `xp` (uncapped, drives the derived level via `src/quiz/utils/level.util.ts`, capped display at level 50)
 - **RefreshToken** — hashed token, `expiresAt`, cascade delete on user
 - **Question** — fetched from OpenTriviaDB, upserted by `sourceId`. Indexed on `(difficulty)`, `(category)`, `(category, difficulty)`
 - **SoloSession** — status: IN_PROGRESS | FINISHED | EXPIRED. Indexed on `(userId, status)`, `(status, expiresAt)`
@@ -128,5 +129,6 @@ GET    /api/score/leaderboard             ?difficulty (required, IsEnum)
 - DTOs use `class-validator`. `ValidationPipe` has `whitelist: true` + `forbidNonWhitelisted: true` — unknown fields are rejected with 400.
 - Password changes are **not supported** via PATCH /users/:id. Requires a dedicated endpoint (not yet implemented).
 - `lang` is hardcoded to `"en"` in quiz sessions for now — French translation via DeepL is a future TODO.
+- XP: 7/14/28 per correct easy/medium/hard answer (`src/quiz/constants/xp.ts`), awarded in `QuizService.finishSession`. Level is a pure function of XP (`getLevelFromXp`, quadratic curve, capped display at 50) — no anti-grind yet, deliberately deferred.
 - External API errors (OpenTriviaDB down) return `503 ServiceUnavailableException`.
 - Linter: Biome (not ESLint). Run `pnpm lint` before committing.
