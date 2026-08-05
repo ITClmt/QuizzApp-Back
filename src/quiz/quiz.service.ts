@@ -23,7 +23,7 @@ export class QuizService {
 	private readonly logger = new Logger(QuizService.name);
 	private readonly OTD_URL = 'https://opentdb.com/api.php';
 	private readonly QUESTIONS_PER_GAME = 50;
-	private readonly GAME_DURATION_MS = 2 * 60 * 1000; // 2 minutes
+	private readonly GAME_DURATION_MS = 1.5 * 60 * 1000; // 1min30
 
 	constructor(
 		private readonly httpService: HttpService,
