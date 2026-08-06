@@ -51,7 +51,7 @@ src/
 │       └── update-user.dto.ts   # email, username, lang only — password change NOT supported
 ├── quiz/                    # Quiz sessions
 │   ├── quiz.controller.ts   # start, finish, cancel session + validateAnswer
-│   └── quiz.service.ts      # fetches from OpenTriviaDB, upserts questions, manages SoloSession
+│   └── quiz.service.ts      # serves questions from the local Question pool, manages SoloSession
 ├── score/                   # Scores & leaderboard
 │   ├── score.controller.ts
 │   └── dto/
@@ -138,7 +138,7 @@ GET    /api/score/my-rank/global          rank by XP
 
 - **User** — `username` (unique), `email` (unique), `role` (USER|ADMIN), `lang`, `xp` (uncapped, drives the derived level via `src/quiz/utils/level.util.ts`, capped display at level 50)
 - **RefreshToken** — hashed token, `expiresAt`, cascade delete on user
-- **Question** — fetched from OpenTriviaDB, upserted by `sourceId`. Indexed on `(difficulty)`, `(category)`, `(category, difficulty)`
+- **Question** — harvested offline from OpenTriviaDB via `local-scripts/harvest-otd-questions.ts` (translated to FR via DeepL), upserted by `sourceId`. Indexed on `(difficulty)`, `(category)`, `(category, difficulty)`. `category` stores OTD's display name (mapped from the route's numeric category id via `getCategoryOtdName` in `src/quiz/constants/categories.ts`)
 - **SoloSession** — status: IN_PROGRESS | FINISHED | EXPIRED. Indexed on `(userId, status)`, `(status, expiresAt)`
 - **SoloAnswer** — unique `(sessionId, questionId)`
 - **Score** — unique `(userId, difficulty)`, upserted on session finish. Indexed on `(difficulty, value)` for leaderboard
@@ -148,7 +148,7 @@ GET    /api/score/my-rank/global          rank by XP
 
 - DTOs use `class-validator`. `ValidationPipe` has `whitelist: true` + `forbidNonWhitelisted: true` — unknown fields are rejected with 400.
 - Password changes are **not supported** via PATCH /users/:id. Requires a dedicated endpoint (not yet implemented).
-- `lang` is hardcoded to `"en"` in quiz sessions for now — French translation via DeepL is a future TODO.
+- `lang` on quiz sessions comes from the account's `User.lang` (JWT payload) — French accounts get `questionFr`/`answersFr` when present, falling back to EN per-question if a translation is missing.
 - XP: 7/14/28 per correct easy/medium/hard answer (`src/quiz/constants/xp.ts`), awarded in `QuizService.finishSession`. Level is a pure function of XP (`getLevelFromXp`, quadratic curve, capped display at 50) — no anti-grind yet, deliberately deferred.
-- External API errors (OpenTriviaDB down) return `503 ServiceUnavailableException`.
+- Quiz questions are served straight from the local `Question` pool (no live OpenTriviaDB call at request time) — empty result sets return `404 NotFoundException`.
 - Linter: Biome (not ESLint). Run `pnpm lint` before committing.

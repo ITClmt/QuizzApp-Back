@@ -54,8 +54,12 @@ export class QuizController {
 		const difficulty = query.difficulty ?? undefined;
 		const category = query.category ?? undefined;
 		await this.assertCategoryUnlocked(user, category);
-		const lang = 'en';
-		return this.quizService.startSession(user.sub, lang, difficulty, category);
+		return this.quizService.startSession(
+			user.sub,
+			user.lang,
+			difficulty,
+			category,
+		);
 	}
 
 	@Post('finish')

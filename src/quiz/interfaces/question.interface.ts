@@ -1,7 +1,6 @@
 export interface SanitizedQuestion {
 	id: string;
-	questionEn: string;
-	questionFr: string | null;
+	question: string;
 	answers: string[];
 	correctIndex: number;
 	category: string;

@@ -1,4 +1,3 @@
-import { HttpModule } from '@nestjs/axios';
 import { Module } from '@nestjs/common';
 import { PrismaModule } from '../prisma/prisma.module';
 import { ScoreModule } from '../score/score.module';
@@ -6,7 +5,7 @@ import { QuizController } from './quiz.controller';
 import { QuizService } from './quiz.service';
 
 @Module({
-	imports: [HttpModule, PrismaModule, ScoreModule],
+	imports: [PrismaModule, ScoreModule],
 	controllers: [QuizController],
 	providers: [QuizService],
 	exports: [QuizService],
