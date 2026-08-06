@@ -4,31 +4,39 @@ export interface QuizCategory {
 	unlockLevel: number;
 }
 
+/**
+ * Above MAX_LEVEL (50), so the category can never be unlocked. Used to sideline
+ * categories whose OTD question pool is too small for a 50-question game on any
+ * difficulty (verified 2026-08-05 via OTD's api_count.php — see CLAUDE.md).
+ */
+export const SIDELINED_UNLOCK_LEVEL = 101;
+
 export const QUIZ_CATEGORIES: QuizCategory[] = [
 	{ id: '9', name: 'General Knowledge', unlockLevel: 0 },
-	{ id: '11', name: 'Film', unlockLevel: 0 },
-	{ id: '12', name: 'Music', unlockLevel: 0 },
-	{ id: '15', name: 'Video Games', unlockLevel: 0 },
-	{ id: '22', name: 'Geography', unlockLevel: 0 },
-	{ id: '21', name: 'Sports', unlockLevel: 1 },
-	{ id: '23', name: 'History', unlockLevel: 2 },
-	{ id: '27', name: 'Animals', unlockLevel: 3 },
-	{ id: '17', name: 'Science & Nature', unlockLevel: 4 },
-	{ id: '14', name: 'Television', unlockLevel: 5 },
-	{ id: '26', name: 'Celebrities', unlockLevel: 6 },
-	{ id: '20', name: 'Mythology', unlockLevel: 7 },
-	{ id: '25', name: 'Art', unlockLevel: 8 },
-	{ id: '28', name: 'Vehicles', unlockLevel: 9 },
-	{ id: '10', name: 'Books', unlockLevel: 10 },
-	{ id: '18', name: 'Computers', unlockLevel: 11 },
-	{ id: '29', name: 'Comics', unlockLevel: 11 },
-	{ id: '32', name: 'Cartoon & Animations', unlockLevel: 12 },
-	{ id: '31', name: 'Japanese Anime & Manga', unlockLevel: 12 },
-	{ id: '16', name: 'Board Games', unlockLevel: 13 },
-	{ id: '24', name: 'Politics', unlockLevel: 13 },
-	{ id: '19', name: 'Mathematics', unlockLevel: 14 },
-	{ id: '13', name: 'Musicals & Theatres', unlockLevel: 14 },
-	{ id: '30', name: 'Gadgets', unlockLevel: 15 },
+	// hard only has 49 questions
+	{ id: '11', name: 'Film', unlockLevel: SIDELINED_UNLOCK_LEVEL },
+	{ id: '12', name: 'Music', unlockLevel: 1 },
+	{ id: '15', name: 'Video Games', unlockLevel: 2 },
+	{ id: '22', name: 'Geography', unlockLevel: 3 },
+	{ id: '21', name: 'Sports', unlockLevel: SIDELINED_UNLOCK_LEVEL },
+	{ id: '23', name: 'History', unlockLevel: 4 },
+	{ id: '27', name: 'Animals', unlockLevel: SIDELINED_UNLOCK_LEVEL },
+	{ id: '17', name: 'Science & Nature', unlockLevel: 5 },
+	{ id: '14', name: 'Television', unlockLevel: SIDELINED_UNLOCK_LEVEL },
+	{ id: '26', name: 'Celebrities', unlockLevel: SIDELINED_UNLOCK_LEVEL },
+	{ id: '20', name: 'Mythology', unlockLevel: SIDELINED_UNLOCK_LEVEL },
+	{ id: '25', name: 'Art', unlockLevel: SIDELINED_UNLOCK_LEVEL },
+	{ id: '28', name: 'Vehicles', unlockLevel: SIDELINED_UNLOCK_LEVEL },
+	{ id: '10', name: 'Books', unlockLevel: SIDELINED_UNLOCK_LEVEL },
+	{ id: '18', name: 'Computers', unlockLevel: SIDELINED_UNLOCK_LEVEL },
+	{ id: '29', name: 'Comics', unlockLevel: SIDELINED_UNLOCK_LEVEL },
+	{ id: '32', name: 'Cartoon & Animations', unlockLevel: SIDELINED_UNLOCK_LEVEL },
+	{ id: '31', name: 'Japanese Anime & Manga', unlockLevel: SIDELINED_UNLOCK_LEVEL },
+	{ id: '16', name: 'Board Games', unlockLevel: SIDELINED_UNLOCK_LEVEL },
+	{ id: '24', name: 'Politics', unlockLevel: SIDELINED_UNLOCK_LEVEL },
+	{ id: '19', name: 'Mathematics', unlockLevel: SIDELINED_UNLOCK_LEVEL },
+	{ id: '13', name: 'Musicals & Theatres', unlockLevel: SIDELINED_UNLOCK_LEVEL },
+	{ id: '30', name: 'Gadgets', unlockLevel: SIDELINED_UNLOCK_LEVEL },
 ];
 
 export const QUIZ_CATEGORY_IDS = QUIZ_CATEGORIES.map((c) => c.id);
