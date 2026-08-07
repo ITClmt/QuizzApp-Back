@@ -4,6 +4,7 @@ import {
 	Injectable,
 	NotFoundException,
 } from '@nestjs/common';
+import { ErrorCode, errorBody } from '../common/error-codes';
 import { Difficulty, Question } from '../generated/prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { ScoreService } from '../score/score.service';
@@ -44,7 +45,12 @@ export class QuizService {
 
 		const total = await this.prisma.question.count({ where });
 		if (total === 0) {
-			throw new NotFoundException('No questions available for this selection');
+			throw new NotFoundException(
+				errorBody(
+					ErrorCode.NO_QUESTIONS_AVAILABLE,
+					'No questions available for this selection',
+				),
+			);
 		}
 
 		const take = Math.min(this.QUESTIONS_PER_GAME, total);
@@ -112,7 +118,12 @@ export class QuizService {
 		});
 
 		if (existing) {
-			throw new ConflictException('A session is already in progress');
+			throw new ConflictException(
+				errorBody(
+					ErrorCode.SESSION_ALREADY_IN_PROGRESS,
+					'A session is already in progress',
+				),
+			);
 		}
 
 		const questions = await this.getQuestions(lang, difficulty, category);
@@ -140,7 +151,9 @@ export class QuizService {
 		const session = await this.getActiveSession(userId, sessionId);
 
 		if (!session) {
-			throw new NotFoundException('Session not found');
+			throw new NotFoundException(
+				errorBody(ErrorCode.SESSION_NOT_FOUND, 'Session not found'),
+			);
 		}
 
 		// Récupère toutes les questions en une seule requête
@@ -176,7 +189,10 @@ export class QuizService {
 			const question = questionMap.get(answer.questionId);
 			if (!question) {
 				throw new BadRequestException(
-					`Question ${answer.questionId} introuvable ou invalide.`,
+					errorBody(
+						ErrorCode.INVALID_ANSWER_QUESTION,
+						`Question ${answer.questionId} introuvable ou invalide.`,
+					),
 				);
 			}
 
@@ -268,7 +284,9 @@ export class QuizService {
 		const session = await this.getActiveSession(userId, sessionId);
 
 		if (!session) {
-			throw new NotFoundException('Session not found');
+			throw new NotFoundException(
+				errorBody(ErrorCode.SESSION_NOT_FOUND, 'Session not found'),
+			);
 		}
 
 		await this.prisma.soloSession.update({
@@ -291,15 +309,27 @@ export class QuizService {
 		});
 
 		if (!session) {
-			throw new NotFoundException('Session not found');
+			throw new NotFoundException(
+				errorBody(ErrorCode.SESSION_NOT_FOUND, 'Session not found'),
+			);
 		}
 
 		if (session.userId !== userId) {
-			throw new BadRequestException('Session does not belong to this user');
+			throw new BadRequestException(
+				errorBody(
+					ErrorCode.SESSION_NOT_OWNED,
+					'Session does not belong to this user',
+				),
+			);
 		}
 
 		if (session.status !== 'IN_PROGRESS') {
-			throw new BadRequestException('Session is already finished');
+			throw new BadRequestException(
+				errorBody(
+					ErrorCode.SESSION_ALREADY_FINISHED,
+					'Session is already finished',
+				),
+			);
 		}
 
 		if (new Date() > session.expiresAt) {
@@ -307,7 +337,9 @@ export class QuizService {
 				where: { id: sessionId },
 				data: { status: 'EXPIRED' },
 			});
-			throw new BadRequestException('Session has expired');
+			throw new BadRequestException(
+				errorBody(ErrorCode.SESSION_EXPIRED, 'Session has expired'),
+			);
 		}
 
 		return session;

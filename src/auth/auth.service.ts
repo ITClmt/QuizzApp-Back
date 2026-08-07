@@ -2,6 +2,7 @@ import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import * as argon2 from 'argon2';
+import { ErrorCode, errorBody } from 'src/common/error-codes';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { UsersService } from 'src/users/users.service';
 import { CreateUserDto } from '../users/dto/create-user.dto';
@@ -60,7 +61,12 @@ export class AuthService {
 				secret: this.configService.getOrThrow<string>('JWT_REFRESH_SECRET'),
 			});
 		} catch {
-			throw new UnauthorizedException('Refresh token invalide ou expiré');
+			throw new UnauthorizedException(
+				errorBody(
+					ErrorCode.AUTH_REFRESH_TOKEN_INVALID,
+					'Refresh token invalide ou expiré',
+				),
+			);
 		}
 
 		const storedTokens = await this.prisma.refreshToken.findMany({
@@ -76,7 +82,12 @@ export class AuthService {
 			}
 		}
 
-		throw new UnauthorizedException('Refresh token révoqué ou inexistant');
+		throw new UnauthorizedException(
+			errorBody(
+				ErrorCode.AUTH_REFRESH_TOKEN_REVOKED,
+				'Refresh token révoqué ou inexistant',
+			),
+		);
 	}
 
 	async register(createUserDto: CreateUserDto) {
@@ -95,11 +106,21 @@ export class AuthService {
 	async login(loginDto: LoginDto) {
 		const user = await this.userService.findByEmail(loginDto.email);
 		if (!user)
-			throw new UnauthorizedException('Email ou mot de passe incorrect');
+			throw new UnauthorizedException(
+				errorBody(
+					ErrorCode.AUTH_INVALID_CREDENTIALS,
+					'Email ou mot de passe incorrect',
+				),
+			);
 
 		const isPwdMatch = await argon2.verify(user.password, loginDto.password);
 		if (!isPwdMatch)
-			throw new UnauthorizedException('Email ou mot de passe incorrect');
+			throw new UnauthorizedException(
+				errorBody(
+					ErrorCode.AUTH_INVALID_CREDENTIALS,
+					'Email ou mot de passe incorrect',
+				),
+			);
 
 		return this.generateAndSaveTokens(
 			user.id,

@@ -16,6 +16,7 @@ import {
 import { CurrentUser } from 'src/auth/decorators/current-user.decorator';
 import { Roles } from 'src/auth/decorators/roles.decorator';
 import type { JwtPayload } from 'src/auth/types/jwt-payload.type';
+import { ErrorCode, errorBody } from 'src/common/error-codes';
 import { Role } from 'src/generated/prisma/enums';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UsersService } from './users.service';
@@ -27,7 +28,10 @@ export class UsersController {
 	private assertOwnerOrAdmin(user: JwtPayload, targetId: string): void {
 		if (user.sub !== targetId && user.role !== Role.ADMIN) {
 			throw new ForbiddenException(
-				'Vous ne pouvez modifier que votre propre compte',
+				errorBody(
+					ErrorCode.FORBIDDEN_NOT_OWNER,
+					'Vous ne pouvez modifier que votre propre compte',
+				),
 			);
 		}
 	}

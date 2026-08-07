@@ -1,0 +1,30 @@
+export const ErrorCode = {
+	// auth
+	AUTH_INVALID_CREDENTIALS: 'AUTH_INVALID_CREDENTIALS',
+	AUTH_REFRESH_TOKEN_INVALID: 'AUTH_REFRESH_TOKEN_INVALID',
+	AUTH_REFRESH_TOKEN_REVOKED: 'AUTH_REFRESH_TOKEN_REVOKED',
+	AUTH_UNAUTHORIZED: 'AUTH_UNAUTHORIZED',
+
+	// users
+	EMAIL_ALREADY_USED: 'EMAIL_ALREADY_USED',
+	USER_NOT_FOUND: 'USER_NOT_FOUND',
+	FORBIDDEN_NOT_OWNER: 'FORBIDDEN_NOT_OWNER',
+
+	// quiz
+	CATEGORY_LOCKED: 'CATEGORY_LOCKED',
+	NO_QUESTIONS_AVAILABLE: 'NO_QUESTIONS_AVAILABLE',
+	SESSION_ALREADY_IN_PROGRESS: 'SESSION_ALREADY_IN_PROGRESS',
+	SESSION_NOT_FOUND: 'SESSION_NOT_FOUND',
+	SESSION_NOT_OWNED: 'SESSION_NOT_OWNED',
+	SESSION_ALREADY_FINISHED: 'SESSION_ALREADY_FINISHED',
+	SESSION_EXPIRED: 'SESSION_EXPIRED',
+	INVALID_ANSWER_QUESTION: 'INVALID_ANSWER_QUESTION',
+} as const;
+
+export type ErrorCode = (typeof ErrorCode)[keyof typeof ErrorCode];
+
+// `message` reste en FR pour les logs/Bruno/debug — le frontend traduit sur
+// `code`, avec repli sur ce message si le code n'est pas (encore) reconnu.
+export function errorBody(code: ErrorCode, message: string) {
+	return { code, message };
+}

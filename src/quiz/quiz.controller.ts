@@ -8,6 +8,7 @@ import {
 } from '@nestjs/common';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import type { JwtPayload } from '../auth/types/jwt-payload.type';
+import { ErrorCode, errorBody } from '../common/error-codes';
 import { UsersService } from '../users/users.service';
 import { isCategoryUnlocked, QUIZ_CATEGORIES } from './constants/categories';
 import { FinishSessionDto } from './dto/finish-session.dto';
@@ -26,7 +27,12 @@ export class QuizController {
 		if (!category) return;
 		const level = await this.quizService.getUserLevel(user.sub);
 		if (!isCategoryUnlocked(category, level)) {
-			throw new ForbiddenException('Category not unlocked for your level');
+			throw new ForbiddenException(
+				errorBody(
+					ErrorCode.CATEGORY_LOCKED,
+					'Category not unlocked for your level',
+				),
+			);
 		}
 	}
 

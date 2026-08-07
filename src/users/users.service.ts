@@ -4,6 +4,7 @@ import {
 	NotFoundException,
 } from '@nestjs/common';
 import * as argon2 from 'argon2';
+import { ErrorCode, errorBody } from 'src/common/error-codes';
 import { Prisma } from 'src/generated/prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { getLevelFromXp, xpForLevel } from 'src/quiz/utils/level.util';
@@ -41,7 +42,9 @@ export class UsersService {
 			error instanceof Prisma.PrismaClientKnownRequestError &&
 			error.code === 'P2002'
 		) {
-			throw new ConflictException('Cet email est déjà utilisé');
+			throw new ConflictException(
+				errorBody(ErrorCode.EMAIL_ALREADY_USED, 'Cet email est déjà utilisé'),
+			);
 		}
 		throw error;
 	}
@@ -60,7 +63,10 @@ export class UsersService {
 			where: { id },
 			select: userSelect,
 		});
-		if (!user) throw new NotFoundException('Utilisateur non trouvé');
+		if (!user)
+			throw new NotFoundException(
+				errorBody(ErrorCode.USER_NOT_FOUND, 'Utilisateur non trouvé'),
+			);
 		return withLevel(user);
 	}
 

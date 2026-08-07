@@ -7,7 +7,13 @@ import {
 import { Reflector } from '@nestjs/core';
 import { JwtService } from '@nestjs/jwt';
 import { Request } from 'express';
+import { ErrorCode, errorBody } from 'src/common/error-codes';
 import { IS_PUBLIC_KEY } from '../decorators/public.decorator';
+
+const unauthorized = () =>
+	new UnauthorizedException(
+		errorBody(ErrorCode.AUTH_UNAUTHORIZED, 'Authentification requise'),
+	);
 
 @Injectable()
 export class AuthGuard implements CanActivate {
@@ -29,7 +35,7 @@ export class AuthGuard implements CanActivate {
 		const request = context.switchToHttp().getRequest();
 		const token = this.extractTokenFromHeader(request);
 		if (!token) {
-			throw new UnauthorizedException();
+			throw unauthorized();
 		}
 		try {
 			// 💡 Here the JWT secret key that's used for verifying the payload
@@ -39,7 +45,7 @@ export class AuthGuard implements CanActivate {
 			// so that we can access it in our route handlers
 			request['user'] = payload;
 		} catch {
-			throw new UnauthorizedException();
+			throw unauthorized();
 		}
 		return true;
 	}
