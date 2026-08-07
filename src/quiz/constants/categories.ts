@@ -148,6 +148,20 @@ export const QUIZ_CATEGORIES: QuizCategory[] = [
 
 export const QUIZ_CATEGORY_IDS = QUIZ_CATEGORIES.map((c) => c.id);
 
+export const AVAILABLE_QUIZ_CATEGORIES = QUIZ_CATEGORIES.filter(
+	(c) => c.unlockLevel !== SIDELINED_UNLOCK_LEVEL,
+);
+
+export function getCategoriesUnlockedBetween(
+	previousLevel: number,
+	newLevel: number,
+): QuizCategory[] {
+	if (newLevel <= previousLevel) return [];
+	return AVAILABLE_QUIZ_CATEGORIES.filter(
+		(c) => c.unlockLevel > previousLevel && c.unlockLevel <= newLevel,
+	);
+}
+
 export function isCategoryUnlocked(categoryId: string, level: number): boolean {
 	const category = QUIZ_CATEGORIES.find((c) => c.id === categoryId);
 	return category ? level >= category.unlockLevel : false;

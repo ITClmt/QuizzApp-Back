@@ -8,7 +8,10 @@ import { ErrorCode, errorBody } from '../common/error-codes';
 import { Difficulty, Question } from '../generated/prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { ScoreService } from '../score/score.service';
-import { getCategoryOtdName } from './constants/categories';
+import {
+	getCategoriesUnlockedBetween,
+	getCategoryOtdName,
+} from './constants/categories';
 import { XP_PER_DIFFICULTY } from './constants/xp';
 import { AnswerDto } from './dto/finish-session.dto';
 import { SanitizedQuestion } from './interfaces/question.interface';
@@ -261,8 +264,9 @@ export class QuizService {
 				: []),
 		]);
 
+		const previousLevel = getLevelFromXp(xpBefore);
 		const level = getLevelFromXp(xpBefore + xpEarned);
-		const leveledUp = level > getLevelFromXp(xpBefore);
+		const leveledUp = level > previousLevel;
 
 		// Retourne le récapitulatif formaté
 		return {
@@ -275,8 +279,14 @@ export class QuizService {
 			),
 			answers: answersResult,
 			xpEarned,
+			previousLevel,
 			level,
 			leveledUp,
+			// Ids only — the client owns the localized labels
+			unlockedCategoryIds: getCategoriesUnlockedBetween(
+				previousLevel,
+				level,
+			).map((c) => c.id),
 		};
 	}
 

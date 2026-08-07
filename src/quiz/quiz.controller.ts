@@ -10,7 +10,10 @@ import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import type { JwtPayload } from '../auth/types/jwt-payload.type';
 import { ErrorCode, errorBody } from '../common/error-codes';
 import { UsersService } from '../users/users.service';
-import { isCategoryUnlocked, QUIZ_CATEGORIES } from './constants/categories';
+import {
+	AVAILABLE_QUIZ_CATEGORIES,
+	isCategoryUnlocked,
+} from './constants/categories';
 import { FinishSessionDto } from './dto/finish-session.dto';
 import { GetQuestionsDto } from './dto/get-questions.dto';
 import { PostAnswerDto } from './dto/post-answer.dto';
@@ -39,7 +42,7 @@ export class QuizController {
 	@Get('categories')
 	async getCategories(@CurrentUser() user: JwtPayload) {
 		const level = await this.quizService.getUserLevel(user.sub);
-		return QUIZ_CATEGORIES.map((category) => ({
+		return AVAILABLE_QUIZ_CATEGORIES.map((category) => ({
 			...category,
 			unlocked: level >= category.unlockLevel,
 		}));
