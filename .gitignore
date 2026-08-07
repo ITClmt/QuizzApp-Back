@@ -65,3 +65,6 @@ report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
 
 # scripts locaux one-off (traduction DeepL, relecture Gemini)
 /local-scripts
+
+# backups bdd
+backup_questions_*.sql
