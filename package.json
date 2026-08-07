@@ -37,6 +37,7 @@
 		"class-validator": "^0.14.3",
 		"he": "^1.2.0",
 		"helmet": "^8.2.0",
+		"obscenity": "^0.4.6",
 		"pg": "^8.18.0",
 		"reflect-metadata": "^0.2.2",
 		"rxjs": "^7.8.1"
@@ -72,6 +73,9 @@
 		"testRegex": ".*\\.spec\\.ts$",
 		"transform": {
 			"^.+\\.(t|j)s$": "ts-jest"
+		},
+		"moduleNameMapper": {
+			"^src/(.*)$": "<rootDir>/$1"
 		},
 		"collectCoverageFrom": [
 			"**/*.(t|j)s"

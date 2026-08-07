@@ -8,7 +8,7 @@ NestJS REST API for a quiz mobile app (React Native client).
 - **ORM:** Prisma v7 + PostgreSQL
 - **Auth:** JWT (access + refresh tokens) + Argon2 password hashing
 - **Validation:** class-validator / class-transformer (global ValidationPipe)
-- **Security:** Helmet, ThrottlerGuard (global)
+- **Security:** Helmet, ThrottlerGuard (global), `obscenity` (username profanity/slur filter)
 - **Scheduler:** @nestjs/schedule (token cleanup cron)
 - **Package manager:** pnpm
 
@@ -147,6 +147,7 @@ GET    /api/score/my-rank/global          rank by XP
 ## Key conventions
 
 - DTOs use `class-validator`. `ValidationPipe` has `whitelist: true` + `forbidNonWhitelisted: true` — unknown fields are rejected with 400.
+- `username` in `CreateUserDto`/`UpdateUserDto` is checked against a profanity/slur filter via the `@IsNotForbiddenWord()` custom validator (`src/common/validators/is-not-forbidden-word.decorator.ts`). Matching engine: `obscenity` (`src/common/moderation/profanity.ts`), combining its built-in English dataset with a French word list sourced from the community LDNOOBW repo (`src/common/moderation/forbidden-words.fr.ts`, with a few upstream entries dropped as Scunthorpe-style false positives — see file comment). French words are matched whole-word only (`|word|` boundary patterns) and accent-normalized via a custom transformer, since `obscenity`'s built-in transformers are ASCII-only. Perspective API (Google/Jigsaw) was considered and rejected: it's sunsetting (service ends 2026-12-31, no new quota requests accepted since 2026-02), needs a synchronous external call on the register path, and its toxicity model isn't tuned for single-token strings like usernames.
 - Password changes are **not supported** via PATCH /users/:id. Requires a dedicated endpoint (not yet implemented).
 - `lang` on quiz sessions comes from the account's `User.lang`, read fresh from the DB in `QuizController` (`UsersService.getUserLang`) rather than trusted from the JWT — the JWT claim is only a snapshot from token issuance and goes stale as soon as the user changes their language preference, until the next token refresh. Once a session is created, `SoloSession.lang` snapshots the value for that session's lifetime. French accounts get `questionFr`/`answersFr` when present, falling back to EN per-question if a translation is missing.
 - XP: 7/14/28 per correct easy/medium/hard answer (`src/quiz/constants/xp.ts`), awarded in `QuizService.finishSession`. Level is a pure function of XP (`getLevelFromXp`, quadratic curve, capped display at 50) — no anti-grind yet, deliberately deferred.
