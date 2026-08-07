@@ -148,7 +148,7 @@ GET    /api/score/my-rank/global          rank by XP
 
 - DTOs use `class-validator`. `ValidationPipe` has `whitelist: true` + `forbidNonWhitelisted: true` — unknown fields are rejected with 400.
 - Password changes are **not supported** via PATCH /users/:id. Requires a dedicated endpoint (not yet implemented).
-- `lang` on quiz sessions comes from the account's `User.lang` (JWT payload) — French accounts get `questionFr`/`answersFr` when present, falling back to EN per-question if a translation is missing.
+- `lang` on quiz sessions comes from the account's `User.lang`, read fresh from the DB in `QuizController` (`UsersService.getUserLang`) rather than trusted from the JWT — the JWT claim is only a snapshot from token issuance and goes stale as soon as the user changes their language preference, until the next token refresh. Once a session is created, `SoloSession.lang` snapshots the value for that session's lifetime. French accounts get `questionFr`/`answersFr` when present, falling back to EN per-question if a translation is missing.
 - XP: 7/14/28 per correct easy/medium/hard answer (`src/quiz/constants/xp.ts`), awarded in `QuizService.finishSession`. Level is a pure function of XP (`getLevelFromXp`, quadratic curve, capped display at 50) — no anti-grind yet, deliberately deferred.
 - Quiz questions are served straight from the local `Question` pool (no live OpenTriviaDB call at request time) — empty result sets return `404 NotFoundException`.
 - Linter: Biome (not ESLint). Run `pnpm lint` before committing.

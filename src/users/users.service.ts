@@ -64,6 +64,14 @@ export class UsersService {
 		return withLevel(user);
 	}
 
+	async getUserLang(id: string): Promise<string> {
+		const user = await this.prisma.user.findUniqueOrThrow({
+			where: { id },
+			select: { lang: true },
+		});
+		return user.lang;
+	}
+
 	// ⚠️ Intentionally returns the password hash — needed for auth verification
 	async findByEmail(email: string) {
 		return this.prisma.user.findUnique({
