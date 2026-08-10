@@ -40,6 +40,38 @@ export const AVATARS: Avatar[] = [
 	{ slug: 'yellow-chick', unlockLevel: 0 },
 	{ slug: 'yellow-cyclops', unlockLevel: 0 },
 
+	// unlockable/ — gated by level; ordered here from cheapest to priciest
+	{ slug: 'honey-bunny', unlockLevel: 6 },
+	// Pas de niveau 7 : le lapin violet doublonnait le "purple-bunny" gratuit — retire.
+	// Pas de niveau 8 : sky-blob retire a la demande (2026-08-10).
+	{ slug: 'blue-sprout', unlockLevel: 9 },
+	{ slug: 'smoke-ghost', unlockLevel: 10 },
+	{ slug: 'honey-monster', unlockLevel: 11 },
+	{ slug: 'gold-blob', unlockLevel: 12 },
+	{ slug: 'moss-monster', unlockLevel: 13 },
+	{ slug: 'amber-cyclops', unlockLevel: 14 },
+	{ slug: 'rune-golem', unlockLevel: 15 },
+	// Pas de niveau 16 : le demon rouge doublonnait les "red-devil"/"red-tail-devil"
+	// gratuits — retire.
+	{ slug: 'ember-triclops', unlockLevel: 17 },
+	{ slug: 'jade-triclops', unlockLevel: 18 },
+	{ slug: 'mint-devil', unlockLevel: 19 },
+	{ slug: 'leaf-sprite', unlockLevel: 20 },
+	{ slug: 'phoenix', unlockLevel: 21 },
+	{ slug: 'starry-cyclops', unlockLevel: 22 },
+	{ slug: 'sparkle-cyclops', unlockLevel: 23 },
+	{ slug: 'blue-flame', unlockLevel: 24 },
+	{ slug: 'emerald-sparkle', unlockLevel: 25 },
+	{ slug: 'opal-ghost', unlockLevel: 26 },
+	{ slug: 'stardust-puff', unlockLevel: 27 },
+	{ slug: 'crystal-golem', unlockLevel: 28 },
+	{ slug: 'storm-monster', unlockLevel: 29 },
+	// Pas de niveau 30 : le nuage galaxie prevu ici doublonnait visuellement
+	// Epic_Spacey (special/, attribue a la main) — retire du catalogue.
+	{ slug: 'steam-robot', unlockLevel: 31 },
+	{ slug: 'copper-robot', unlockLevel: 32 },
+	{ slug: 'monster-king', unlockLevel: 33 },
+
 	// special/ — DB-only, never reachable through PATCH /users/:id
 	{ slug: 'Epic_Spacey', unlockLevel: HIDDEN_UNLOCK_LEVEL },
 ];

@@ -1,6 +1,7 @@
 import { MAX_LEVEL } from 'src/quiz/utils/level.util';
 import {
 	AVATAR_SLUGS,
+	AVATARS,
 	type Avatar,
 	DEFAULT_AVATAR_SLUG,
 	getAvatarsUnlockedBetween,
@@ -31,10 +32,26 @@ describe('avatars catalog', () => {
 		expect(AVATAR_SLUGS).toContain('Epic_Spacey');
 	});
 
-	it('ships every free avatar unlocked from level 0', () => {
+	it('ships every avatar unlocked at MAX_LEVEL except the hidden ones', () => {
 		for (const avatar of SELECTABLE_AVATARS) {
-			expect(isAvatarUnlocked(avatar.slug, 0)).toBe(true);
+			expect(isAvatarUnlocked(avatar.slug, MAX_LEVEL)).toBe(true);
 		}
+	});
+
+	it('keeps unlockLevel within [0, MAX_LEVEL] for every selectable avatar', () => {
+		for (const avatar of SELECTABLE_AVATARS) {
+			expect(avatar.unlockLevel).toBeGreaterThanOrEqual(0);
+			expect(avatar.unlockLevel).toBeLessThanOrEqual(MAX_LEVEL);
+		}
+	});
+
+	// La progression "unlockable" doit rester strictement croissante : deux avatars
+	// au même palier diluent le sentiment de progression sans raison de design ici.
+	it('gives every unlockable avatar its own level', () => {
+		const gated = AVATARS.filter(
+			(a) => a.unlockLevel > 0 && a.unlockLevel !== HIDDEN_UNLOCK_LEVEL,
+		).map((a) => a.unlockLevel);
+		expect(new Set(gated).size).toBe(gated.length);
 	});
 
 	// Le défaut posé en base par la migration doit exister dans le catalogue,
