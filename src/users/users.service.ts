@@ -117,10 +117,7 @@ export class UsersService {
 		}
 	}
 
-	async update(
-		id: string,
-		updateUserDto: UpdateUserDto
-	) {
+	async update(id: string, updateUserDto: UpdateUserDto) {
 		// Already carries the derived level — no extra query needed for the gate below
 		const target = await this.findById(id);
 
@@ -130,9 +127,7 @@ export class UsersService {
 			data.username = updateUserDto.username;
 		if (updateUserDto.lang !== undefined) data.lang = updateUserDto.lang;
 		if (updateUserDto.avatarSlug !== undefined) {
-			if (
-				!isAvatarUnlocked(updateUserDto.avatarSlug, target.level)
-			) {
+			if (!isAvatarUnlocked(updateUserDto.avatarSlug, target.level)) {
 				throw new ForbiddenException(
 					errorBody(
 						ErrorCode.AVATAR_LOCKED,
