@@ -132,10 +132,6 @@ export class AuthService {
 		);
 	}
 
-	async getProfile(id: string) {
-		return this.userService.findById(id);
-	}
-
 	async refreshTokens(refreshToken: string) {
 		const { payload, matchedToken } =
 			await this.findValidRefreshToken(refreshToken);

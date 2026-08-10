@@ -1,19 +1,10 @@
-import {
-	Body,
-	Controller,
-	Get,
-	HttpCode,
-	HttpStatus,
-	Post,
-} from '@nestjs/common';
+import { Body, Controller, HttpCode, HttpStatus, Post } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import { CreateUserDto } from 'src/users/dto/create-user.dto';
 import { AuthService } from './auth.service';
-import { CurrentUser } from './decorators/current-user.decorator';
 import { Public } from './decorators/public.decorator';
 import { LoginDto } from './dto/login.dto';
 import { RefreshTokenDto } from './dto/refresh_token.dto';
-import type { JwtPayload } from './types/jwt-payload.type';
 
 @Controller('auth')
 export class AuthController {
@@ -25,12 +16,6 @@ export class AuthController {
 	@HttpCode(HttpStatus.OK)
 	async login(@Body() loginDto: LoginDto) {
 		return this.authService.login(loginDto);
-	}
-
-	@Get('profile')
-	@HttpCode(HttpStatus.OK)
-	async getProfile(@CurrentUser() user: JwtPayload) {
-		return this.authService.getProfile(user.sub);
 	}
 
 	@Throttle({ default: { limit: 10, ttl: 900000 } })

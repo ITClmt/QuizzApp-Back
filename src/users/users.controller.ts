@@ -51,6 +51,14 @@ export class UsersController {
 		});
 	}
 
+	// ⚠️ Must stay above @Get(':id') — that route's ParseUUIDPipe would reject
+	// 'me' with a 400 if it matched first.
+	@Get('me')
+	@HttpCode(HttpStatus.OK)
+	async getMe(@CurrentUser() user: JwtPayload) {
+		return this.userService.findById(user.sub);
+	}
+
 	@Get(':id')
 	@HttpCode(HttpStatus.OK)
 	async findById(@Param('id', ParseUUIDPipe) id: string) {

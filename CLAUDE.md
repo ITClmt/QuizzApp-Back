@@ -34,7 +34,7 @@ src/
 ├── app.module.ts            # Root module: ThrottlerModule, ScheduleModule, ConfigModule
 ├── app.controller.ts        # GET /health (public)
 ├── auth/                    # JWT auth
-│   ├── auth.controller.ts   # /auth — login, register, refresh, logout, profile
+│   ├── auth.controller.ts   # /auth — login, register, refresh, logout
 │   ├── auth.service.ts
 │   ├── token-cleanup.service.ts  # Cron every 6h: deletes expired refresh tokens
 │   ├── guards/
@@ -69,7 +69,6 @@ POST /api/auth/register   @Public()
 POST /api/auth/login      @Public()  — rate limited: 5 req / 15 min
 POST /api/auth/refresh    @Public()
 POST /api/auth/logout
-GET  /api/auth/profile
 ```
 
 Access token: short-lived JWT (Bearer).  
@@ -94,13 +93,13 @@ counters, no Redis). Fixed 2026-08-05 by removing the second bucket entirely and
 tightening the single `default` throttler per-route instead: `AuthController`'s
 `login`/`register`/`refresh`/`logout` handlers each carry their own
 `@Throttle({ default: { limit, ttl } })` override (5/15min for login, 10/15min for the
-others); `getProfile` and every other controller are left undecorated and simply use
+others); `GET /users/me` and every other controller are left undecorated and simply use
 the loose 600/60s default. **Prefer this pattern going forward — per-route `@Throttle()`
 overrides on the single `default` throttler — over adding another named throttler**,
 since a new named throttler again applies everywhere unless every other controller is
 updated to skip it.
 
-Polling-style GETs like `/auth/profile` are refetched on React Navigation focus by
+Polling-style GETs like `/users/me` are refetched on React Navigation focus by
 several screens (Navbar, Profile, Home, Leaderboard) — keep this in mind before adding
 more focus-triggered refetches, even against the looser 600/60s default.
 
@@ -113,9 +112,9 @@ POST   /api/auth/register                 @Public()
 POST   /api/auth/login                    @Public() — 5 req/15min
 POST   /api/auth/refresh                  @Public()
 POST   /api/auth/logout
-GET    /api/auth/profile
 
 GET    /api/users                         @Roles(ADMIN)
+GET    /api/users/me                      current user's own profile
 GET    /api/users/:id
 PATCH  /api/users/:id                     owner or ADMIN only
 DELETE /api/users/:id                     owner or ADMIN only
