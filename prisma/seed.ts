@@ -14,25 +14,25 @@ const SEED_EMAIL_DOMAIN = '@seed.local';
 const SEED_PASSWORD = 'Password123!';
 
 const USERS = [
-	{ username: 'sophie_martin', first: 'sophie.martin', avatarSlug: 'default' },
-	{ username: 'lucas_bernard', first: 'lucas.bernard', avatarSlug: 'default' },
+	{ username: 'sophie_martin', first: 'sophie.martin', avatarSlug: 'yellow-cyclops' },
+	{ username: 'lucas_bernard', first: 'lucas.bernard', avatarSlug: 'yellow-cyclops' },
 	{ username: 'emma_dubois', first: 'emma.dubois', avatarSlug: 'Epic_Spacey' },
-	{ username: 'hugo_thomas', first: 'hugo.thomas', avatarSlug: 'default' },
-	{ username: 'chloe_robert', first: 'chloe.robert', avatarSlug: 'default' },
-	{ username: 'nathan_petit', first: 'nathan.petit', avatarSlug: 'default' },
+	{ username: 'hugo_thomas', first: 'hugo.thomas', avatarSlug: 'yellow-cyclops' },
+	{ username: 'chloe_robert', first: 'chloe.robert', avatarSlug: 'yellow-cyclops' },
+	{ username: 'nathan_petit', first: 'nathan.petit', avatarSlug: 'yellow-cyclops' },
 	{ username: 'lea_richard', first: 'lea.richard', avatarSlug: 'Epic_Spacey' },
-	{ username: 'maxime_durand', first: 'maxime.durand', avatarSlug: 'default' },
+	{ username: 'maxime_durand', first: 'maxime.durand', avatarSlug: 'yellow-cyclops' },
 	{
 		username: 'camille_moreau',
 		first: 'camille.moreau',
-		avatarSlug: 'default',
+		avatarSlug: 'yellow-cyclops',
 	},
 	{
 		username: 'theo_laurent',
 		first: 'theo.laurent',
 		avatarSlug: 'Epic_Spacey',
 	},
-	{ username: 'julie_simon', first: 'julie.simon', avatarSlug: 'default' },
+	{ username: 'julie_simon', first: 'julie.simon', avatarSlug: 'yellow-cyclops' },
 ];
 
 const QUESTIONS: Array<{

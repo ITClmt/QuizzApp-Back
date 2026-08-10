@@ -2,6 +2,7 @@ import { MAX_LEVEL } from 'src/quiz/utils/level.util';
 import {
 	AVATAR_SLUGS,
 	type Avatar,
+	DEFAULT_AVATAR_SLUG,
 	getAvatarsUnlockedBetween,
 	HIDDEN_UNLOCK_LEVEL,
 	isAvatarUnlocked,
@@ -34,6 +35,14 @@ describe('avatars catalog', () => {
 		for (const avatar of SELECTABLE_AVATARS) {
 			expect(isAvatarUnlocked(avatar.slug, 0)).toBe(true);
 		}
+	});
+
+	// Le défaut posé en base par la migration doit exister dans le catalogue,
+	// sinon tout nouveau compte porterait un slug que le client ne sait pas rendre.
+	it('keeps the account default inside the selectable catalog', () => {
+		expect(SELECTABLE_AVATARS.some((a) => a.slug === DEFAULT_AVATAR_SLUG)).toBe(
+			true,
+		);
 	});
 
 	describe('isAvatarUnlocked', () => {

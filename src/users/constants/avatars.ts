@@ -5,15 +5,16 @@ export interface Avatar {
 }
 
 /**
- * Above MAX_LEVEL (50), so the avatar can never be unlocked by playing. Used for
- * avatars granted by hand (an ADMIN can still set one via PATCH /users/:id) —
- * same idea as SIDELINED_UNLOCK_LEVEL for quiz categories.
+ * Above MAX_LEVEL (50), so the avatar can never be unlocked through PATCH /users/:id —
+ * not even by an ADMIN. Used for avatars only ever set directly in the database (see
+ * prisma/seed.ts); same idea as SIDELINED_UNLOCK_LEVEL for quiz categories.
  */
 export const HIDDEN_UNLOCK_LEVEL = 101;
 
-export const AVATARS: Avatar[] = [
-	{ slug: 'default', unlockLevel: 0 },
+/** Applied by the DB to new accounts, and used as the client's fallback for an unknown slug */
+export const DEFAULT_AVATAR_SLUG = 'yellow-cyclops';
 
+export const AVATARS: Avatar[] = [
 	// free/ — no unlock condition
 	{ slug: 'blue-blob', unlockLevel: 0 },
 	{ slug: 'blue-bunny', unlockLevel: 0 },
@@ -39,11 +40,11 @@ export const AVATARS: Avatar[] = [
 	{ slug: 'yellow-chick', unlockLevel: 0 },
 	{ slug: 'yellow-cyclops', unlockLevel: 0 },
 
-	// special/ — granted by hand only
+	// special/ — DB-only, never reachable through PATCH /users/:id
 	{ slug: 'Epic_Spacey', unlockLevel: HIDDEN_UNLOCK_LEVEL },
 ];
 
-/** Every slug the API accepts — including the hidden ones, which only an ADMIN can assign */
+/** Every slug the API validates as a known avatar — the hidden ones included */
 export const AVATAR_SLUGS = AVATARS.map((a) => a.slug);
 
 /** What the avatar picker shows: everything obtainable by playing, locked or not */
