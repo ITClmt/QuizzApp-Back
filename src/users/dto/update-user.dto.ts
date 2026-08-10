@@ -1,11 +1,13 @@
 import {
 	IsEmail,
+	IsIn,
 	IsOptional,
 	IsString,
 	MaxLength,
 	MinLength,
 } from 'class-validator';
 import { IsNotForbiddenWord } from 'src/common/validators/is-not-forbidden-word.decorator';
+import { AVATAR_SLUGS } from '../constants/avatars';
 
 export class UpdateUserDto {
 	@IsOptional()
@@ -22,4 +24,8 @@ export class UpdateUserDto {
 	@IsOptional()
 	@IsString()
 	lang?: string;
+
+	@IsOptional()
+	@IsIn(AVATAR_SLUGS)
+	avatarSlug?: string;
 }

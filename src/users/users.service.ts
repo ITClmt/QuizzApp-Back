@@ -1,5 +1,6 @@
 import {
 	ConflictException,
+	ForbiddenException,
 	Injectable,
 	NotFoundException,
 } from '@nestjs/common';
@@ -8,6 +9,7 @@ import { ErrorCode, errorBody } from 'src/common/error-codes';
 import { Prisma } from 'src/generated/prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { getLevelFromXp, xpForLevel } from 'src/quiz/utils/level.util';
+import { isAvatarUnlocked, SELECTABLE_AVATARS } from './constants/avatars';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 
@@ -70,6 +72,20 @@ export class UsersService {
 		return withLevel(user);
 	}
 
+	/** Catalog + per-user unlock status, mirroring GET /quiz/categories */
+	async getAvatarCatalog(id: string) {
+		const { xp } = await this.prisma.user.findUniqueOrThrow({
+			where: { id },
+			select: { xp: true },
+		});
+		const level = getLevelFromXp(xp);
+
+		return SELECTABLE_AVATARS.map((avatar) => ({
+			...avatar,
+			unlocked: level >= avatar.unlockLevel,
+		}));
+	}
+
 	async getUserLang(id: string): Promise<string> {
 		const user = await this.prisma.user.findUniqueOrThrow({
 			where: { id },
@@ -101,14 +117,31 @@ export class UsersService {
 		}
 	}
 
-	async update(id: string, updateUserDto: UpdateUserDto) {
-		await this.findById(id);
+	async update(
+		id: string,
+		updateUserDto: UpdateUserDto
+	) {
+		// Already carries the derived level — no extra query needed for the gate below
+		const target = await this.findById(id);
 
 		const data: Prisma.UserUpdateInput = {};
 		if (updateUserDto.email !== undefined) data.email = updateUserDto.email;
 		if (updateUserDto.username !== undefined)
 			data.username = updateUserDto.username;
 		if (updateUserDto.lang !== undefined) data.lang = updateUserDto.lang;
+		if (updateUserDto.avatarSlug !== undefined) {
+			if (
+				!isAvatarUnlocked(updateUserDto.avatarSlug, target.level)
+			) {
+				throw new ForbiddenException(
+					errorBody(
+						ErrorCode.AVATAR_LOCKED,
+						"Cet avatar n'est pas encore débloqué",
+					),
+				);
+			}
+			data.avatarSlug = updateUserDto.avatarSlug;
+		}
 
 		try {
 			const user = await this.prisma.user.update({

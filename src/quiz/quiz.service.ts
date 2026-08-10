@@ -8,6 +8,7 @@ import { ErrorCode, errorBody } from '../common/error-codes';
 import { Difficulty, Question } from '../generated/prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { ScoreService } from '../score/score.service';
+import { getAvatarsUnlockedBetween } from '../users/constants/avatars';
 import {
 	getCategoriesUnlockedBetween,
 	getCategoryOtdName,
@@ -287,6 +288,10 @@ export class QuizService {
 				previousLevel,
 				level,
 			).map((c) => c.id),
+			// Slugs only — the client owns the images
+			unlockedAvatarSlugs: getAvatarsUnlockedBetween(previousLevel, level).map(
+				(a) => a.slug,
+			),
 		};
 	}
 

@@ -114,6 +114,7 @@ POST   /api/auth/refresh                  @Public()
 POST   /api/auth/logout
 
 GET    /api/users                         @Roles(ADMIN)
+GET    /api/users/avatars                 avatar catalog + unlock status per user level
 GET    /api/users/me                      current user's own profile
 GET    /api/users/:id
 PATCH  /api/users/:id                     owner or ADMIN only
@@ -148,6 +149,17 @@ GET    /api/score/my-rank/global          rank by XP
 - DTOs use `class-validator`. `ValidationPipe` has `whitelist: true` + `forbidNonWhitelisted: true` — unknown fields are rejected with 400.
 - `username` in `CreateUserDto`/`UpdateUserDto` is checked against a profanity/slur filter via the `@IsNotForbiddenWord()` custom validator (`src/common/validators/is-not-forbidden-word.decorator.ts`). Matching engine: `obscenity` (`src/common/moderation/profanity.ts`), combining its built-in English dataset with a French word list sourced from the community LDNOOBW repo (`src/common/moderation/forbidden-words.fr.ts`, with a few upstream entries dropped as Scunthorpe-style false positives — see file comment). French words are matched whole-word only (`|word|` boundary patterns) and accent-normalized via a custom transformer, since `obscenity`'s built-in transformers are ASCII-only. Perspective API (Google/Jigsaw) was considered and rejected: it's sunsetting (service ends 2026-12-31, no new quota requests accepted since 2026-02), needs a synchronous external call on the register path, and its toxicity model isn't tuned for single-token strings like usernames.
 - Password changes are **not supported** via PATCH /users/:id. Requires a dedicated endpoint (not yet implemented).
+- Avatars follow the same architecture as quiz categories: a static catalog in code
+  (`src/users/constants/avatars.ts`) with a per-avatar `unlockLevel`, and ownership **derived**
+  from `getLevelFromXp(user.xp)` — never persisted, so there is no unlock table to migrate or
+  re-sync when avatars are added. Split of responsibility on `PATCH /users/:id`: `UpdateUserDto`
+  only checks the slug **exists** (`@IsIn(AVATAR_SLUGS)` → 400), while `UsersService.update()`
+  checks the caller may **wear** it (`isAvatarUnlocked` against the target's level → 403
+  `AVATAR_LOCKED`). Hand-granted avatars (`HIDDEN_UNLOCK_LEVEL`, above `MAX_LEVEL` — e.g.
+  `Epic_Spacey`) sit above every reachable level, so no one can unlock them through this endpoint,
+  admins included; they're excluded from `SELECTABLE_AVATARS` so they never show up in the picker,
+  and are only ever set directly in the database (see `prisma/seed.ts`). The client owns the
+  images (`constants/avatars.ts` maps slug → bundled PNG), the server owns the unlock rules.
 - `lang` on quiz sessions comes from the account's `User.lang`, read fresh from the DB in `QuizController` (`UsersService.getUserLang`) rather than trusted from the JWT — the JWT claim is only a snapshot from token issuance and goes stale as soon as the user changes their language preference, until the next token refresh. Once a session is created, `SoloSession.lang` snapshots the value for that session's lifetime. French accounts get `questionFr`/`answersFr` when present, falling back to EN per-question if a translation is missing.
 - XP: 7/14/28 per correct easy/medium/hard answer (`src/quiz/constants/xp.ts`), awarded in `QuizService.finishSession`. Level is a pure function of XP (`getLevelFromXp`, quadratic curve, capped display at 50) — no anti-grind yet, deliberately deferred.
 - Quiz questions are served straight from the local `Question` pool (no live OpenTriviaDB call at request time) — empty result sets return `404 NotFoundException`.

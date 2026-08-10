@@ -52,7 +52,13 @@ export class UsersController {
 	}
 
 	// ⚠️ Must stay above @Get(':id') — that route's ParseUUIDPipe would reject
-	// 'me' with a 400 if it matched first.
+	// 'avatars'/'me' with a 400 if it matched first.
+	@Get('avatars')
+	@HttpCode(HttpStatus.OK)
+	async getAvatars(@CurrentUser() user: JwtPayload) {
+		return this.userService.getAvatarCatalog(user.sub);
+	}
+
 	@Get('me')
 	@HttpCode(HttpStatus.OK)
 	async getMe(@CurrentUser() user: JwtPayload) {
