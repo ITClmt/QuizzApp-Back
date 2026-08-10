@@ -167,6 +167,7 @@ enum SoloSessionStatus {
   IN_PROGRESS
   FINISHED
   EXPIRED
+  CANCELED
 }
 
 enum Role {

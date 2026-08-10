@@ -81,6 +81,7 @@ export class QuizController {
 			user.sub,
 			body.sessionId,
 			body.answers,
+			body.timedOut,
 		);
 	}
 

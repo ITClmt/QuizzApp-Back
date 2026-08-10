@@ -1,6 +1,5 @@
 import {
 	BadRequestException,
-	ConflictException,
 	Injectable,
 	NotFoundException,
 } from '@nestjs/common';
@@ -112,23 +111,10 @@ export class QuizService {
 		difficulty?: string,
 		category?: string,
 	) {
-		// Vérifie qu'aucune session n'est déjà en cours
-		const existing = await this.prisma.soloSession.findFirst({
-			where: {
-				userId,
-				status: 'IN_PROGRESS',
-				expiresAt: { gt: new Date() },
-			},
+		await this.prisma.soloSession.updateMany({
+			where: { userId, status: 'IN_PROGRESS' },
+			data: { status: 'CANCELED' },
 		});
-
-		if (existing) {
-			throw new ConflictException(
-				errorBody(
-					ErrorCode.SESSION_ALREADY_IN_PROGRESS,
-					'A session is already in progress',
-				),
-			);
-		}
 
 		const questions = await this.getQuestions(lang, difficulty, category);
 
@@ -151,7 +137,12 @@ export class QuizService {
 		};
 	}
 
-	async finishSession(userId: string, sessionId: string, answers: AnswerDto[]) {
+	async finishSession(
+		userId: string,
+		sessionId: string,
+		answers: AnswerDto[],
+		timedOut: boolean,
+	) {
 		const session = await this.getActiveSession(userId, sessionId);
 
 		if (!session) {
@@ -244,7 +235,7 @@ export class QuizService {
 
 			this.prisma.soloSession.update({
 				where: { id: sessionId },
-				data: { status: 'EXPIRED' },
+				data: { status: timedOut ? 'EXPIRED' : 'FINISHED' },
 			}),
 
 			...Object.entries(scoresByDifficulty).map(([difficulty, value]) =>
@@ -306,13 +297,13 @@ export class QuizService {
 
 		await this.prisma.soloSession.update({
 			where: { id: sessionId },
-			data: { status: 'FINISHED' },
+			data: { status: 'CANCELED' },
 		});
 
 		return {
 			sessionId: session.id,
-			status: 'FINISHED' as const,
-			message: 'Session finished without saving answers',
+			status: 'CANCELED' as const,
+			message: 'Session canceled without saving answers',
 		};
 	}
 

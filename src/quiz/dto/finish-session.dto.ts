@@ -1,6 +1,7 @@
 import { Type } from 'class-transformer';
 import {
 	IsArray,
+	IsBoolean,
 	IsInt,
 	IsString,
 	Max,
@@ -26,4 +27,7 @@ export class FinishSessionDto {
 	@ValidateNested({ each: true })
 	@Type(() => AnswerDto)
 	answers: AnswerDto[];
+
+	@IsBoolean()
+	timedOut: boolean;
 }
