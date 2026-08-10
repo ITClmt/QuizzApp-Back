@@ -22,7 +22,7 @@ pnpm lint               # Biome check + fix
 pnpm format             # Biome format
 
 pnpm prisma migrate dev --name <name>   # create + apply migration
-pnpm prisma generate                    # regenerate client after schema change
+pnpm prisma generate                    # regenerate client after schema change — NOT optional
 pnpm prisma studio                      # GUI explorer
 ```
 
@@ -164,3 +164,10 @@ GET    /api/score/my-rank/global          rank by XP
 - XP: 7/14/28 per correct easy/medium/hard answer (`src/quiz/constants/xp.ts`), awarded in `QuizService.finishSession`. Level is a pure function of XP (`getLevelFromXp`, quadratic curve, capped display at 50) — no anti-grind yet, deliberately deferred.
 - Quiz questions are served straight from the local `Question` pool (no live OpenTriviaDB call at request time) — empty result sets return `404 NotFoundException`.
 - Linter: Biome (not ESLint). Run `pnpm lint` before committing.
+- ⚠️ **`@default(...)` values are applied by the Prisma *client*, not by Postgres.** The generated
+  client embeds a full copy of `schema.prisma` (`inlineSchema` in `src/generated/prisma/internal/`)
+  and fills defaults from it, so it sends the value explicitly on insert and the column's DB default
+  never gets a chance to apply. `prisma migrate dev` updates the database but does **not** always
+  regenerate the client: after changing any `@default`, run `pnpm prisma generate` and rebuild, or
+  the app keeps writing the old value against a correctly-migrated database (cost a real debugging
+  session on the `avatarSlug` default, 2026-08-10).

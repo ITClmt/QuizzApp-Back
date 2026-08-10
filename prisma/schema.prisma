@@ -19,7 +19,7 @@ model User {
   username      String         @unique
   email         String         @unique
   password      String
-  avatarSlug    String         @default("default")
+  avatarSlug    String         @default("yellow-cyclops")
   role          Role           @default(USER)
   lang          String         @default("en")
   xp            Int            @default(0)
