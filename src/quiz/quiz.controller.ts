@@ -3,6 +3,8 @@ import {
 	Controller,
 	ForbiddenException,
 	Get,
+	Param,
+	ParseUUIDPipe,
 	Post,
 	Query,
 } from '@nestjs/common';
@@ -15,6 +17,7 @@ import {
 	isCategoryUnlocked,
 } from './constants/categories';
 import { FinishSessionDto } from './dto/finish-session.dto';
+import { GetHistoryDto } from './dto/get-history.dto';
 import { GetQuestionsDto } from './dto/get-questions.dto';
 import { PostAnswerDto } from './dto/post-answer.dto';
 import { QuizService } from './quiz.service';
@@ -104,5 +107,21 @@ export class QuizController {
 			body.answerIndex,
 			lang,
 		);
+	}
+
+	@Get('history')
+	async getHistory(
+		@Query() query: GetHistoryDto,
+		@CurrentUser() user: JwtPayload,
+	) {
+		return this.quizService.getHistory(user.sub, query);
+	}
+
+	@Get('history/:sessionId')
+	async getHistoryDetail(
+		@Param('sessionId', ParseUUIDPipe) sessionId: string,
+		@CurrentUser() user: JwtPayload,
+	) {
+		return this.quizService.getHistoryDetail(user.sub, sessionId);
 	}
 }

@@ -14,8 +14,16 @@ import {
 } from './constants/categories';
 import { XP_PER_DIFFICULTY } from './constants/xp';
 import { AnswerDto } from './dto/finish-session.dto';
+import { GetHistoryDto } from './dto/get-history.dto';
 import { SanitizedQuestion } from './interfaces/question.interface';
 import { getLevelFromXp } from './utils/level.util';
+
+function summarizeAnswers(answers: { isCorrect: boolean }[]) {
+	return {
+		correctCount: answers.filter((a) => a.isCorrect).length,
+		totalQuestions: answers.length,
+	};
+}
 
 @Injectable()
 export class QuizService {
@@ -304,6 +312,81 @@ export class QuizService {
 			sessionId: session.id,
 			status: 'CANCELED' as const,
 			message: 'Session canceled without saving answers',
+		};
+	}
+
+	async getHistory(userId: string, { cursor, limit }: GetHistoryDto) {
+		const sessions = await this.prisma.soloSession.findMany({
+			where: { userId, status: { in: ['FINISHED', 'EXPIRED'] } },
+			orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+			take: limit + 1,
+			...(cursor && { cursor: { id: cursor }, skip: 1 }),
+			include: { answers: { select: { isCorrect: true } } },
+		});
+
+		const hasMore = sessions.length > limit;
+		const page = hasMore ? sessions.slice(0, limit) : sessions;
+
+		return {
+			items: page.map((session) => ({
+				id: session.id,
+				difficulty: session.difficulty,
+				category: session.category,
+				status: session.status,
+				createdAt: session.createdAt,
+				...summarizeAnswers(session.answers),
+			})),
+			nextCursor: hasMore ? page[page.length - 1].id : null,
+		};
+	}
+
+	async getHistoryDetail(userId: string, sessionId: string) {
+		const session = await this.prisma.soloSession.findUnique({
+			where: { id: sessionId },
+		});
+
+		if (
+			!session ||
+			session.userId !== userId ||
+			(session.status !== 'FINISHED' && session.status !== 'EXPIRED')
+		) {
+			throw new NotFoundException(
+				errorBody(ErrorCode.SESSION_NOT_FOUND, 'Session not found'),
+			);
+		}
+
+		const soloAnswers = await this.prisma.soloAnswer.findMany({
+			where: { sessionId },
+			include: { question: true },
+			orderBy: [{ createdAt: 'asc' }, { questionId: 'asc' }],
+		});
+
+		const answers = soloAnswers.map(({ question, ...answer }) => {
+			const useFr = session.lang === 'fr' && !!question.questionFr;
+			const questionText = (
+				useFr ? question.questionFr : question.questionEn
+			) as string;
+			const choices = (
+				useFr ? question.answersFr : question.answersEn
+			) as string[];
+
+			return {
+				questionId: question.id,
+				questionText,
+				isCorrect: answer.isCorrect,
+				userAnswerText: choices[answer.answerIndex],
+				correctAnswerText: choices[question.correctIndex],
+			};
+		});
+
+		return {
+			sessionId: session.id,
+			difficulty: session.difficulty,
+			category: session.category,
+			status: session.status,
+			createdAt: session.createdAt,
+			...summarizeAnswers(answers),
+			answers,
 		};
 	}
 
