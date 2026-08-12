@@ -126,6 +126,8 @@ POST   /api/quiz/start                    ?difficulty&category
 POST   /api/quiz/finish
 POST   /api/quiz/cancel
 POST   /api/quiz/answer
+GET    /api/quiz/history                  ?cursor&limit — cursor-paginated list of the caller's past sessions
+GET    /api/quiz/history/:sessionId       detail of one past session
 
 GET    /api/score/user/:id                ParseUUIDPipe — scores are public
 GET    /api/score/leaderboard             ?difficulty (required, IsEnum)
