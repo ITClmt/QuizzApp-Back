@@ -62,3 +62,6 @@ report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
 
 # backups bdd
 backup_questions_*.sql
+
+# runbook de déploiement — contient la topologie du serveur, ne jamais committer
+DEPLOY.md
