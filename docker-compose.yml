@@ -19,7 +19,9 @@ services:
       start_period: 15s
 
   api:
-    build: .
+    build:
+      context: .
+      target: dev
     container_name: nest-api
     restart: unless-stopped
     environment:

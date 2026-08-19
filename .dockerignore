@@ -1,3 +1,12 @@
 node_modules
 dist
 .env
+.env.*
+!.env.sample
+.git
+.vscode
+Bruno
+coverage
+local-scripts
+backup_questions_*.sql
+*.log
