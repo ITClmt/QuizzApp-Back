@@ -152,6 +152,7 @@ DELETE /api/friends/:userId               remove a friend
 - **User** — `username` (unique), `email` (unique), `role` (USER|ADMIN), `lang`, `xp` (uncapped, drives the derived level via `src/quiz/utils/level.util.ts`, capped display at level 50)
 - **RefreshToken** — hashed token, `expiresAt`, cascade delete on user
 - **Question** — harvested offline from OpenTriviaDB via `local-scripts/harvest-otd-questions.ts` (translated to FR via DeepL), upserted by `sourceId`. Indexed on `(difficulty)`, `(category)`, `(category, difficulty)`. `category` stores OTD's display name (mapped from the route's numeric category id via `getCategoryOtdName` in `src/quiz/constants/categories.ts`)
+- **Tag** — internal sub-category (`slug` unique, e.g. `football`, `ligue-1`), never shown to players. Many-to-many with Question (implicit relation, table `_QuestionToTag`), 0..n tags per question. Free-floating: not tied to `Question.category`, so one tag can span several categories. OTD-harvested questions have no tags; tags come from `local-scripts/generate-questions.ts` (Gemini, review in `generated/pending.json`, then `import-questions.ts`, which also rejects any category outside `QUIZ_CATEGORIES`)
 - **SoloSession** — status: IN_PROGRESS | FINISHED | EXPIRED. Indexed on `(userId, status)`, `(status, expiresAt)`
 - **SoloAnswer** — unique `(sessionId, questionId)`
 - **Score** — unique `(userId, difficulty)`, upserted on session finish. Indexed on `(difficulty, value)` for leaderboard

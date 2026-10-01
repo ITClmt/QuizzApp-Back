@@ -56,7 +56,7 @@ const QUESTIONS: Array<{
 		questionEn: 'What is the chemical symbol for water?',
 		answersEn: ['H2O', 'CO2', 'O2', 'NaCl'],
 		correctIndex: 0,
-		category: 'Science: General Knowledge',
+		category: 'Science & Nature',
 		difficulty: 'easy',
 	},
 	{
@@ -80,7 +80,7 @@ const QUESTIONS: Array<{
 		questionEn: 'What is the largest planet in our solar system?',
 		answersEn: ['Earth', 'Saturn', 'Jupiter', 'Neptune'],
 		correctIndex: 2,
-		category: 'Science: Astronomy',
+		category: 'Science & Nature',
 		difficulty: 'easy',
 	},
 	{
@@ -146,7 +146,7 @@ const QUESTIONS: Array<{
 			'Electromagnetism',
 		],
 		correctIndex: 1,
-		category: 'Science: General Knowledge',
+		category: 'Science & Nature',
 		difficulty: 'hard',
 	},
 	{

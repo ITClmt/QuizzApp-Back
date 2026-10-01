@@ -46,12 +46,23 @@ model Question {
   difficulty   String
   createdAt    DateTime @default(now())
 
+  tags          Tag[]
   gameQuestions GameQuestion[]
   soloAnswers   SoloAnswer[]
 
   @@index([difficulty])
   @@index([category])
   @@index([category, difficulty])
+}
+
+// Sous-catégorie libre (ex. "football", "ligue-1") : usage interne, jamais affichée.
+// Indépendante de Question.category — un même tag peut servir dans plusieurs catégories.
+model Tag {
+  id        String   @id @default(uuid())
+  slug      String   @unique
+  createdAt DateTime @default(now())
+
+  questions Question[]
 }
 
 model Score {
