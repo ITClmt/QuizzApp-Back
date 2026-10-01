@@ -28,6 +28,11 @@ function toPublicUser({ xp, ...user }: PublicUserRow) {
   return { ...user, level: getLevelFromXp(xp) };
 }
 
+/** Échappe les jokers de LIKE (\ en premier, puisque c'est le caractère d'échappement) */
+export function escapeLike(value: string): string {
+  return value.replace(/[\\%_]/g, (char) => `\\${char}`);
+}
+
 export type FriendRelation = "none" | "friends" | "sent" | "received";
 
 @Injectable()
@@ -84,15 +89,19 @@ export class FriendsService {
   }
 
   async search(me: string, q: string) {
-    const users = await this.prisma.user.findMany({
-      where: {
-        id: { not: me },
-        username: { contains: q, mode: "insensitive" },
-      },
-      select: publicUserSelect,
-      orderBy: { username: "asc" },
-      take: SEARCH_LIMIT,
-    });
+    // SQL brut : Prisma ne sait pas exprimer unaccent() dans un where. On
+    // retire accents et majuscules des deux côtés, donc « eleonore » trouve
+    // « Éléonore » et inversement. % et _ tapés par l'utilisateur sont
+    // échappés pour rester des caractères littéraux.
+    const pattern = `%${escapeLike(q)}%`;
+    const users = await this.prisma.$queryRaw<PublicUserRow[]>`
+      SELECT id, username, "avatarSlug", xp
+      FROM "User"
+      WHERE id <> ${me}
+        AND unaccent(lower(username)) LIKE unaccent(lower(${pattern})) ESCAPE '\\'
+      ORDER BY username ASC
+      LIMIT ${SEARCH_LIMIT}
+    `;
 
     // Une seule requête pour toutes les relations, jamais une par résultat
     const friendships = await this.prisma.friendship.findMany({

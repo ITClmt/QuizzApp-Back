@@ -2,7 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { ErrorCode } from 'src/common/error-codes';
 import { Prisma } from 'src/generated/prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { FriendsService } from './friends.service';
+import { escapeLike, FriendsService } from './friends.service';
 import { pairKey } from './utils/pair-key';
 
 const ME = '11111111-1111-4111-8111-111111111111';
@@ -10,9 +10,9 @@ const OTHER = '22222222-2222-4222-8222-222222222222';
 
 function makePrisma() {
 	return {
+		$queryRaw: jest.fn(),
 		user: {
 			findUnique: jest.fn(),
-			findMany: jest.fn(),
 		},
 		friendship: {
 			findUnique: jest.fn(),
@@ -252,7 +252,7 @@ describe('FriendsService', () => {
 				avatarSlug: 'x',
 				xp: 0,
 			}));
-			prisma.user.findMany.mockResolvedValue(users);
+			prisma.$queryRaw.mockResolvedValue(users);
 			prisma.friendship.findMany.mockResolvedValue([
 				{
 					id: 'fb',
@@ -282,12 +282,24 @@ describe('FriendsService', () => {
 				['c', 'sent', 'fc'],
 				['d', 'received', 'fd'],
 			]);
-			expect(prisma.user.findMany).toHaveBeenCalledWith(
-				expect.objectContaining({
-					where: expect.objectContaining({ id: { not: ME } }),
-				}),
-			);
 			expect(results[0].user).not.toHaveProperty('xp');
+		});
+
+		it('excludes the caller and escapes LIKE wildcards', async () => {
+			prisma.$queryRaw.mockResolvedValue([]);
+			prisma.friendship.findMany.mockResolvedValue([]);
+
+			await service.search(ME, '50%_off');
+
+			// Tagged template : arguments = (fragments SQL, ...valeurs liées)
+			const [, ...values] = prisma.$queryRaw.mock.calls[0];
+			expect(values).toEqual([ME, '%50\\%\\_off%', 10]);
+		});
+	});
+
+	describe('escapeLike', () => {
+		it('escapes backslash, percent and underscore', () => {
+			expect(escapeLike('a\\b%c_d')).toBe('a\\\\b\\%c\\_d');
 		});
 	});
 });

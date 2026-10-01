@@ -140,7 +140,7 @@ GET    /api/score/my-rank/global          rank by XP
 
 GET    /api/friends                       accepted friends, sorted by username
 GET    /api/friends/requests              { received, sent } pending requests
-GET    /api/friends/search                ?q (2–20 chars) — 10 results max, with caller's relation — 30 req/min
+GET    /api/friends/search                ?q (2–20 chars) — accent/case-insensitive (Postgres `unaccent`, raw SQL), 10 results max, with caller's relation — 30 req/min
 POST   /api/friends/requests              { userId } — auto-accepts a crossed request — 20 req/min
 POST   /api/friends/requests/:id/accept   receiver only
 DELETE /api/friends/requests/:id          decline (receiver) or cancel (requester) — deletes the row
