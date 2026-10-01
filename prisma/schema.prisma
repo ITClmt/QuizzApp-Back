@@ -69,9 +69,13 @@ model Score {
 }
 
 model Friendship {
-  id        String           @id @default(uuid())
-  status    FriendshipStatus @default(PENDING)
-  createdAt DateTime         @default(now())
+  id         String           @id @default(uuid())
+  status     FriendshipStatus @default(PENDING)
+  // "<plus petit id>:<plus grand id>" — un seul lien par paire, quel que soit le sens
+  // de la demande (A→B et B→A en même temps sont rejetés par Postgres)
+  pairKey    String           @unique
+  createdAt  DateTime         @default(now())
+  acceptedAt DateTime?
 
   requesterId String
   requester   User   @relation("requester", fields: [requesterId], references: [id], onDelete: Cascade)
@@ -79,7 +83,8 @@ model Friendship {
   receiverId String
   receiver   User   @relation("receiver", fields: [receiverId], references: [id], onDelete: Cascade)
 
-  @@unique([requesterId, receiverId])
+  @@index([receiverId, status])
+  @@index([requesterId, status])
 }
 
 model Game {
@@ -154,7 +159,6 @@ model SoloAnswer {
 enum FriendshipStatus {
   PENDING
   ACCEPTED
-  DECLINED
 }
 
 enum GameStatus {

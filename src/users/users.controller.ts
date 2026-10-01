@@ -62,7 +62,7 @@ export class UsersController {
 	@Get('me')
 	@HttpCode(HttpStatus.OK)
 	async getMe(@CurrentUser() user: JwtPayload) {
-		return this.userService.findById(user.sub);
+		return this.userService.findMe(user.sub);
 	}
 
 	@Get(':id')

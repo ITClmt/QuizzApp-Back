@@ -72,6 +72,20 @@ export class UsersService {
 		return withLevel(user);
 	}
 
+	/**
+	 * Profil de l'appelant + nombre de demandes d'ami reçues, pour la pastille du
+	 * profil — /users/me est déjà refetché au focus, ça évite un appel de plus.
+	 */
+	async findMe(id: string) {
+		const [user, pendingFriendRequests] = await Promise.all([
+			this.findById(id),
+			this.prisma.friendship.count({
+				where: { receiverId: id, status: 'PENDING' },
+			}),
+		]);
+		return { ...user, pendingFriendRequests };
+	}
+
 	/** Catalog + per-user unlock status, mirroring GET /quiz/categories */
 	async getAvatarCatalog(id: string) {
 		const { xp } = await this.prisma.user.findUniqueOrThrow({

@@ -56,6 +56,9 @@ src/
 │   ├── score.controller.ts
 │   └── dto/
 │       └── leaderboard-query.dto.ts  # @IsEnum(Difficulty) — required
+├── friends/                 # Friend requests & friend list
+│   ├── friends.service.ts   # exports assertAllFriends() for multiplayer games
+│   └── utils/pair-key.ts    # "<minId>:<maxId>" — one Friendship row per pair
 └── prisma/                  # PrismaService wrapper
 ```
 
@@ -115,7 +118,7 @@ POST   /api/auth/logout
 
 GET    /api/users                         @Roles(ADMIN)
 GET    /api/users/avatars                 avatar catalog + unlock status per user level
-GET    /api/users/me                      current user's own profile
+GET    /api/users/me                      current user's own profile + pendingFriendRequests (profile badge)
 GET    /api/users/:id
 PATCH  /api/users/:id                     owner or ADMIN only
 DELETE /api/users/:id                     owner or ADMIN only
@@ -134,6 +137,14 @@ GET    /api/score/leaderboard             ?difficulty (required, IsEnum)
 GET    /api/score/leaderboard/global      top 10 by XP
 GET    /api/score/my-rank                 ?difficulty (required, IsEnum)
 GET    /api/score/my-rank/global          rank by XP
+
+GET    /api/friends                       accepted friends, sorted by username
+GET    /api/friends/requests              { received, sent } pending requests
+GET    /api/friends/search                ?q (2–20 chars) — 10 results max, with caller's relation — 30 req/min
+POST   /api/friends/requests              { userId } — auto-accepts a crossed request — 20 req/min
+POST   /api/friends/requests/:id/accept   receiver only
+DELETE /api/friends/requests/:id          decline (receiver) or cancel (requester) — deletes the row
+DELETE /api/friends/:userId               remove a friend
 ```
 
 ## Database schema (key models)
@@ -144,7 +155,8 @@ GET    /api/score/my-rank/global          rank by XP
 - **SoloSession** — status: IN_PROGRESS | FINISHED | EXPIRED. Indexed on `(userId, status)`, `(status, expiresAt)`
 - **SoloAnswer** — unique `(sessionId, questionId)`
 - **Score** — unique `(userId, difficulty)`, upserted on session finish. Indexed on `(difficulty, value)` for leaderboard
-- **Friendship**, **Game**, **GamePlayer**, **GameQuestion** — schema defined, not yet implemented
+- **Friendship** — status PENDING | ACCEPTED (no DECLINED: declining/cancelling deletes the row, so the request can be re-sent). `pairKey` (`@unique`, sorted ids) guarantees one row per pair whatever the direction — crossed simultaneous requests hit P2002 and resolve to an accept. Limits: 50 pending sent, 200 friends. Public user shape exposed: `{ id, username, avatarSlug, level }` — never email or raw XP
+- **Game**, **GamePlayer**, **GameQuestion** — schema defined, not yet implemented
 
 ## Key conventions
 
