@@ -7,16 +7,13 @@ import { ErrorCode, errorBody } from '../common/error-codes';
 import { Difficulty, Question } from '../generated/prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { ScoreService } from '../score/score.service';
-import { getAvatarsUnlockedBetween } from '../users/constants/avatars';
-import {
-	getCategoriesUnlockedBetween,
-	getCategoryOtdName,
-} from './constants/categories';
+import { getCategoryOtdName } from './constants/categories';
 import { XP_PER_DIFFICULTY } from './constants/xp';
 import { AnswerDto } from './dto/finish-session.dto';
 import { GetHistoryDto } from './dto/get-history.dto';
 import { SanitizedQuestion } from './interfaces/question.interface';
 import { getLevelFromXp } from './utils/level.util';
+import { getProgression } from './utils/progression.util';
 
 function summarizeAnswers(answers: { isCorrect: boolean }[]) {
 	return {
@@ -295,10 +292,6 @@ export class QuizService {
 				: []),
 		]);
 
-		const previousLevel = getLevelFromXp(xpBefore);
-		const level = getLevelFromXp(xpBefore + xpEarned);
-		const leveledUp = level > previousLevel;
-
 		// Retourne le récapitulatif formaté
 		return {
 			totalScore,
@@ -309,19 +302,7 @@ export class QuizService {
 				}),
 			),
 			answers: answersResult,
-			xpEarned,
-			previousLevel,
-			level,
-			leveledUp,
-			// Ids only — the client owns the localized labels
-			unlockedCategoryIds: getCategoriesUnlockedBetween(
-				previousLevel,
-				level,
-			).map((c) => c.id),
-			// Slugs only — the client owns the images
-			unlockedAvatarSlugs: getAvatarsUnlockedBetween(previousLevel, level).map(
-				(a) => a.slug,
-			),
+			...getProgression(xpBefore, xpEarned),
 		};
 	}
 
