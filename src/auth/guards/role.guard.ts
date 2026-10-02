@@ -8,6 +8,9 @@ export class RolesGuard implements CanActivate {
 	constructor(private reflector: Reflector) {}
 
 	canActivate(context: ExecutionContext): boolean {
+		// Guard global, HTTP uniquement — voir AuthGuard
+		if (context.getType() !== 'http') return true;
+
 		const requiredRoles = this.reflector.getAllAndOverride<Role[]>(ROLES_KEY, [
 			context.getHandler(),
 			context.getClass(),

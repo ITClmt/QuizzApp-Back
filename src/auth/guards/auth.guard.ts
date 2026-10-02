@@ -23,6 +23,11 @@ export class AuthGuard implements CanActivate {
 	) {}
 
 	async canActivate(context: ExecutionContext): Promise<boolean> {
+		// Guard global : Nest l'applique aussi aux handlers WebSocket, où il n'y a ni
+		// requête HTTP ni en-tête Authorization. Le socket est authentifié une seule
+		// fois, à la connexion, par le gateway.
+		if (context.getType() !== 'http') return true;
+
 		const isPublic = this.reflector.getAllAndOverride<boolean>(IS_PUBLIC_KEY, [
 			context.getHandler(),
 			context.getClass(),

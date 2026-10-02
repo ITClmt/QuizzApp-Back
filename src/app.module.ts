@@ -2,10 +2,11 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { APP_GUARD } from '@nestjs/core';
 import { ScheduleModule } from '@nestjs/schedule';
-import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
+import { ThrottlerModule } from '@nestjs/throttler';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
+import { HttpThrottlerGuard } from './common/guards/http-throttler.guard';
 import { FriendsModule } from './friends/friends.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { QuizController } from './quiz/quiz.controller';
@@ -32,6 +33,6 @@ import { UsersModule } from './users/users.module';
 		FriendsModule,
 	],
 	controllers: [AppController, QuizController],
-	providers: [AppService, { provide: APP_GUARD, useClass: ThrottlerGuard }],
+	providers: [AppService, { provide: APP_GUARD, useClass: HttpThrottlerGuard }],
 })
 export class AppModule {}
