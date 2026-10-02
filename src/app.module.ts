@@ -8,6 +8,7 @@ import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
 import { HttpThrottlerGuard } from './common/guards/http-throttler.guard';
 import { FriendsModule } from './friends/friends.module';
+import { GamesModule } from './games/games.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { QuizController } from './quiz/quiz.controller';
 import { QuizModule } from './quiz/quiz.module';
@@ -31,6 +32,7 @@ import { UsersModule } from './users/users.module';
 		QuizModule,
 		ScoreModule,
 		FriendsModule,
+		GamesModule,
 	],
 	controllers: [AppController, QuizController],
 	providers: [AppService, { provide: APP_GUARD, useClass: HttpThrottlerGuard }],

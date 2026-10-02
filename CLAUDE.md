@@ -145,6 +145,11 @@ POST   /api/friends/requests              { userId } — auto-accepts a crossed 
 POST   /api/friends/requests/:id/accept   receiver only
 DELETE /api/friends/requests/:id          decline (receiver) or cancel (requester) — deletes the row
 DELETE /api/friends/:userId               remove a friend
+
+POST   /api/games                         { friendIds (1–3, accepted friends), difficulty? (absent = mixed) } — 15 random questions; cancels/leaves the caller's WAITING lobbies, 409 ALREADY_IN_GAME if PLAYING — 10 req/min
+GET    /api/games/invitations             caller's INVITED rows in WAITING games younger than 10 min, with host public profile
+GET    /api/games/active                  { game: { id, status } | null } — WAITING/PLAYING game the caller has JOINED (resume after app kill)
+POST   /api/games/:id/decline             INVITED → DECLINED (204), 404 INVITATION_NOT_FOUND otherwise
 ```
 
 ## Database schema (key models)
@@ -157,7 +162,9 @@ DELETE /api/friends/:userId               remove a friend
 - **SoloAnswer** — unique `(sessionId, questionId)`
 - **Score** — unique `(userId, difficulty)`, upserted on session finish. Indexed on `(difficulty, value)` for leaderboard
 - **Friendship** — status PENDING | ACCEPTED (no DECLINED: declining/cancelling deletes the row, so the request can be re-sent). `pairKey` (`@unique`, sorted ids) guarantees one row per pair whatever the direction — crossed simultaneous requests hit P2002 and resolve to an accept. Limits: 50 pending sent, 200 friends. Public user shape exposed: `{ id, username, avatarSlug, level }` — never email or raw XP
-- **Game**, **GamePlayer**, **GameQuestion** — schema defined, not yet implemented
+- **Game** — status WAITING | PLAYING | FINISHED | CANCELED, `difficulty` (null = mixed), `code` nullable (reserved for join-by-code). Live game state is in memory only (single instance): `GamesService.onApplicationBootstrap` sets every WAITING/PLAYING game to CANCELED, since each deploy kills them
+- **GamePlayer** — status INVITED | JOINED | DECLINED | LEFT (an invitation *is* an INVITED GamePlayer, no separate table), `score` = correct answers, `xpEarned`. One active game per player: creating a game cancels the lobbies you host and leaves the ones you joined
+- **GameQuestion** — the 15 questions drawn at creation, `order` 0–14. **GameAnswer** — unique `(gamePlayerId, gameQuestionId)`, no row = no answer; `responseMs` is display-only, never scored
 
 ## Key conventions
 

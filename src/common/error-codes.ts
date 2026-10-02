@@ -28,6 +28,10 @@ export const ErrorCode = {
 	NOT_FRIENDS: 'NOT_FRIENDS',
 	TOO_MANY_PENDING_REQUESTS: 'TOO_MANY_PENDING_REQUESTS',
 	FRIEND_LIMIT_REACHED: 'FRIEND_LIMIT_REACHED',
+
+	// games
+	ALREADY_IN_GAME: 'ALREADY_IN_GAME',
+	INVITATION_NOT_FOUND: 'INVITATION_NOT_FOUND',
 } as const;
 
 export type ErrorCode = (typeof ErrorCode)[keyof typeof ErrorCode];

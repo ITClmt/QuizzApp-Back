@@ -7,26 +7,16 @@ import {
 import { ErrorCode, errorBody } from "src/common/error-codes";
 import { Prisma } from "src/generated/prisma/client";
 import { PrismaService } from "src/prisma/prisma.service";
-import { getLevelFromXp } from "src/quiz/utils/level.util";
+import {
+  type PublicUserRow,
+  publicUserSelect,
+  toPublicUser,
+} from "src/users/utils/public-user";
 import { pairKey } from "./utils/pair-key";
 
 const MAX_PENDING_SENT = 50;
 const MAX_FRIENDS = 200;
 const SEARCH_LIMIT = 10;
-
-// Profil public minimal : ni email, ni XP brute
-const publicUserSelect = {
-  id: true,
-  username: true,
-  avatarSlug: true,
-  xp: true,
-} as const;
-
-type PublicUserRow = Prisma.UserGetPayload<{ select: typeof publicUserSelect }>;
-
-function toPublicUser({ xp, ...user }: PublicUserRow) {
-  return { ...user, level: getLevelFromXp(xp) };
-}
 
 /** Échappe les jokers de LIKE (\ en premier, puisque c'est le caractère d'échappement) */
 export function escapeLike(value: string): string {
