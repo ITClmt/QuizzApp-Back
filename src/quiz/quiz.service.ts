@@ -49,13 +49,46 @@ export class QuizService {
 		difficulty?: string,
 		category?: string,
 	): Promise<SanitizedQuestion[]> {
-		const where = {
-			...(difficulty && { difficulty }),
-			...(category && { category: getCategoryOtdName(category) }),
-		};
+		const questions = await this.pickRandomQuestions({
+			difficulty,
+			category,
+			count: this.QUESTIONS_PER_GAME,
+		});
 
-		const total = await this.prisma.question.count({ where });
-		if (total === 0) {
+		return questions.map((question) => this.sanitize(question, lang));
+	}
+
+	/**
+	 * Tire `count` questions au hasard (moins si le pool est plus petit).
+	 * Lignes brutes, non localisées : le solo les passe à `sanitize`, le multijoueur
+	 * n'en garde que les ids.
+	 *
+	 * ORDER BY random() plutôt qu'un skip aléatoire : un skip renvoie une fenêtre de
+	 * lignes consécutives dans l'ordre physique de la table, donc des questions
+	 * importées ensemble (même catégorie) se retrouvaient dans la même partie.
+	 */
+	async pickRandomQuestions({
+		difficulty,
+		category,
+		count,
+	}: {
+		difficulty?: string;
+		category?: string;
+		count: number;
+	}): Promise<Question[]> {
+		const otdCategory = category ? getCategoryOtdName(category) : undefined;
+		const difficultyFilter = difficulty ?? null;
+		const categoryFilter = otdCategory ?? null;
+
+		const rows = await this.prisma.$queryRaw<{ id: string }[]>`
+			SELECT id FROM "Question"
+			WHERE (${difficultyFilter}::text IS NULL OR difficulty = ${difficultyFilter})
+				AND (${categoryFilter}::text IS NULL OR category = ${categoryFilter})
+			ORDER BY random()
+			LIMIT ${count}
+		`;
+
+		if (rows.length === 0) {
 			throw new NotFoundException(
 				errorBody(
 					ErrorCode.NO_QUESTIONS_AVAILABLE,
@@ -64,16 +97,14 @@ export class QuizService {
 			);
 		}
 
-		const take = Math.min(this.QUESTIONS_PER_GAME, total);
-		const randomSkip = Math.floor(Math.random() * (total - take + 1));
-
 		const questions = await this.prisma.question.findMany({
-			where,
-			take,
-			skip: randomSkip,
+			where: { id: { in: rows.map((r) => r.id) } },
 		});
 
-		return questions.map((question) => this.sanitize(question, lang));
+		// IN (...) ne garantit aucun ordre (Postgres renvoie l'ordre physique) :
+		// on rétablit celui du tirage.
+		const byId = new Map(questions.map((q) => [q.id, q]));
+		return rows.flatMap((r) => byId.get(r.id) ?? []);
 	}
 
 	private sanitize(question: Question, lang: string): SanitizedQuestion {
