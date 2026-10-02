@@ -32,6 +32,12 @@ export const ErrorCode = {
 	// games
 	ALREADY_IN_GAME: 'ALREADY_IN_GAME',
 	INVITATION_NOT_FOUND: 'INVITATION_NOT_FOUND',
+	GAME_NOT_FOUND: 'GAME_NOT_FOUND',
+	NOT_A_PLAYER: 'NOT_A_PLAYER',
+
+	// websocket
+	INVALID_PAYLOAD: 'INVALID_PAYLOAD',
+	INTERNAL_ERROR: 'INTERNAL_ERROR',
 } as const;
 
 export type ErrorCode = (typeof ErrorCode)[keyof typeof ErrorCode];

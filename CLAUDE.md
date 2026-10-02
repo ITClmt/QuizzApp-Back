@@ -152,6 +152,18 @@ GET    /api/games/active                  { game: { id, status } | null } — WA
 POST   /api/games/:id/decline             INVITED → DECLINED (204), 404 INVITATION_NOT_FOUND otherwise
 ```
 
+## Real-time (Socket.IO)
+
+Multiplayer games run over Socket.IO, path **`/api/socket.io`** (under `/api` like the REST, same proxy routing).
+CORS reuses `corsOrigin()` (`src/common/cors.ts`) through `SocketIoAdapter` — one allowlist (`CORS_ORIGINS`) for HTTP and sockets.
+
+- **Auth**: JWT sent as `auth.token` in the handshake, verified once in a `server.use` middleware (`GamesGateway.afterInit`). Failure → client gets `connect_error` "unauthorized" (refresh the token, reconnect). The global HTTP guards (`AuthGuard`, `RolesGuard`, `HttpThrottlerGuard`) skip non-HTTP contexts on purpose.
+- **Rooms**: every socket joins `user:<id>` on connect (all of a user's devices), and `game:<id>` on `game:join`.
+- **Split**: `GamesGateway` = I/O only (auth, rooms, payload check, error → ack). `GameEngineService` = the game master, in-memory `Map<gameId, LiveGame>` (**single instance assumed**). `GameEmitter` = only exit to clients (mocked in engine tests). `GamesService` = DB only.
+- **Client → server** (each answers with an ack `{ ok: true, data } | { ok: false, error: <ErrorCode> }`): `game:join { gameId }` (accept an invitation, come back to a lobby left before start, or attach another device), `game:leave { gameId }` (host leaving cancels the lobby).
+- **Server → client**: `invitation:received` (same shape as `GET /games/invitations`), `invitation:canceled { gameId }`, `lobby:update { gameId, hostId, difficulty, phase, players: [{ user, isHost, status, connected }] }`, `game:canceled { gameId, reason: host_left | lobby_timeout }`.
+- `POST /games` and `POST /games/:id/decline` go through the engine so players are notified live. Lobbies are canceled after 10 min by an in-memory timer (no cron: a restart cancels every WAITING game anyway).
+
 ## Database schema (key models)
 
 - **User** — `username` (unique), `email` (unique), `role` (USER|ADMIN), `lang`, `xp` (uncapped, drives the derived level via `src/quiz/utils/level.util.ts`, capped display at level 50)

@@ -3,28 +3,8 @@ import { NestFactory } from '@nestjs/core';
 import type { NestExpressApplication } from '@nestjs/platform-express';
 import helmet from 'helmet';
 import { AppModule } from './app.module';
-
-// Liste blanche d'origines (séparées par des virgules) pour le build web.
-// Non défini = tout est accepté : c'est le comportement voulu en dev, et les clients
-// natifs n'envoient de toute façon pas d'en-tête Origin.
-function corsOrigin() {
-	const allowed = (process.env.CORS_ORIGINS ?? '')
-		.split(',')
-		.map((o) => o.trim())
-		.filter(Boolean);
-
-	if (allowed.length === 0) return true;
-
-	return (
-		origin: string | undefined,
-		callback: (err: Error | null, allow?: boolean) => void,
-	) => {
-		// Refus silencieux (false) plutôt qu'une Error : le navigateur bloque de toute
-		// façon faute d'en-tête Access-Control-Allow-Origin, et on évite un 500 + stack
-		// trace dans les logs à chaque requête d'une origine inconnue.
-		callback(null, !origin || allowed.includes(origin));
-	};
-}
+import { corsOrigin } from './common/cors';
+import { SocketIoAdapter } from './games/socket-io.adapter';
 
 async function bootstrap() {
 	const app = await NestFactory.create<NestExpressApplication>(AppModule);
@@ -40,6 +20,8 @@ async function bootstrap() {
 		methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE', 'OPTIONS'],
 		allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
 	});
+	// Même liste blanche pour le socket.io des parties multijoueur
+	app.useWebSocketAdapter(new SocketIoAdapter(app));
 	app.use(
 		helmet({
 			crossOriginResourcePolicy: false,

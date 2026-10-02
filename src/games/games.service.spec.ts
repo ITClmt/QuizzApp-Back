@@ -11,8 +11,8 @@ import { GamesService } from './games.service';
 
 describe('GamesService', () => {
 	const tx = {
-		game: { updateMany: jest.fn(), create: jest.fn() },
-		gamePlayer: { updateMany: jest.fn() },
+		game: { findMany: jest.fn(), updateMany: jest.fn(), create: jest.fn() },
+		gamePlayer: { findMany: jest.fn(), updateMany: jest.fn() },
 	};
 	const prisma = {
 		game: { updateMany: jest.fn() },
@@ -42,12 +42,18 @@ describe('GamesService', () => {
 				{ id: 'q2' },
 			]);
 			tx.game.create.mockResolvedValue({ id: 'game-1' });
+			tx.game.findMany.mockResolvedValue([]);
+			tx.gamePlayer.findMany.mockResolvedValue([]);
 		});
 
 		it("crée la partie : hôte JOINED, amis INVITED, questions dans l'ordre", async () => {
 			const result = await service.createGame('host', ['f1', 'f2'], 'medium');
 
-			expect(result).toEqual({ gameId: 'game-1' });
+			expect(result).toEqual({
+				gameId: 'game-1',
+				canceledGameIds: [],
+				leftGameIds: [],
+			});
 			expect(quizService.pickRandomQuestions).toHaveBeenCalledWith({
 				difficulty: 'medium',
 				count: GAME_QUESTIONS,
@@ -71,19 +77,25 @@ describe('GamesService', () => {
 			expect(tx.game.create.mock.calls[0][0].data.difficulty).toBeNull();
 		});
 
-		it("quitte les salons en attente de l'hôte dans la même transaction", async () => {
-			await service.createGame('host', ['f1']);
+		it("quitte les salons en attente de l'hôte et renvoie lesquels", async () => {
+			tx.game.findMany.mockResolvedValue([{ id: 'hosted' }]);
+			tx.gamePlayer.findMany.mockResolvedValue([{ gameId: 'joined' }]);
 
+			const result = await service.createGame('host', ['f1']);
+
+			expect(result).toEqual({
+				gameId: 'game-1',
+				canceledGameIds: ['hosted'],
+				leftGameIds: ['joined'],
+			});
 			expect(tx.game.updateMany).toHaveBeenCalledWith({
-				where: {
-					status: 'WAITING',
-					players: { some: { userId: 'host', isHost: true } },
-				},
+				where: { id: { in: ['hosted'] } },
 				data: { status: 'CANCELED' },
 			});
-			expect(tx.gamePlayer.updateMany).toHaveBeenCalledWith(
-				expect.objectContaining({ data: { status: 'LEFT' } }),
-			);
+			expect(tx.gamePlayer.updateMany).toHaveBeenCalledWith({
+				where: { userId: 'host', gameId: { in: ['joined'] } },
+				data: { status: 'LEFT' },
+			});
 		});
 
 		it('refuse si l’hôte est dans une partie en cours', async () => {
@@ -104,6 +116,41 @@ describe('GamesService', () => {
 				BadRequestException,
 			);
 			expect(prisma.$transaction).not.toHaveBeenCalled();
+		});
+	});
+
+	describe('joinLobby', () => {
+		beforeEach(() => {
+			prisma.gamePlayer.findFirst.mockResolvedValue(null);
+			tx.game.findMany.mockResolvedValue([]);
+			tx.gamePlayer.findMany.mockResolvedValue([]);
+		});
+
+		it('passe en JOINED en épargnant le salon rejoint', async () => {
+			tx.gamePlayer.updateMany.mockResolvedValue({ count: 1 });
+
+			await service.joinLobby('me', 'g1');
+
+			expect(tx.game.findMany.mock.calls[0][0].where.id).toEqual({
+				not: 'g1',
+			});
+			expect(tx.gamePlayer.updateMany).toHaveBeenLastCalledWith({
+				where: {
+					gameId: 'g1',
+					userId: 'me',
+					status: { in: ['INVITED', 'LEFT'] },
+					game: { status: 'WAITING' },
+				},
+				data: { status: 'JOINED' },
+			});
+		});
+
+		it('lève INVITATION_NOT_FOUND si aucune ligne ne correspond', async () => {
+			tx.gamePlayer.updateMany.mockResolvedValue({ count: 0 });
+
+			await expect(service.joinLobby('me', 'g1')).rejects.toBeInstanceOf(
+				NotFoundException,
+			);
 		});
 	});
 

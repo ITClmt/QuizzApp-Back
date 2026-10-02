@@ -13,6 +13,9 @@ import { QuizService } from "src/quiz/quiz.service";
 import { publicUserSelect, toPublicUser } from "src/users/utils/public-user";
 import { GAME_QUESTIONS, LOBBY_TIMEOUT_MS } from "./constants";
 
+/** Salons quittés au passage, pour que le moteur prévienne leurs autres joueurs */
+export type LobbyExits = { canceledGameIds: string[]; leftGameIds: string[] };
+
 @Injectable()
 export class GamesService implements OnApplicationBootstrap {
   private readonly logger = new Logger(GamesService.name);
@@ -51,10 +54,10 @@ export class GamesService implements OnApplicationBootstrap {
       count: GAME_QUESTIONS,
     });
 
-    const game = await this.prisma.$transaction(async (tx) => {
-      await this.leaveWaitingLobbies(tx, hostId);
+    return this.prisma.$transaction(async (tx) => {
+      const exits = await this.leaveWaitingLobbies(tx, hostId);
 
-      return tx.game.create({
+      const game = await tx.game.create({
         data: {
           difficulty: difficulty ?? null,
           players: {
@@ -69,9 +72,68 @@ export class GamesService implements OnApplicationBootstrap {
         },
         select: { id: true },
       });
-    });
 
-    return { gameId: game.id };
+      return { gameId: game.id, ...exits };
+    });
+  }
+
+  /** Accepte une invitation, ou revient dans un salon quitté avant le lancement */
+  async joinLobby(userId: string, gameId: string): Promise<LobbyExits> {
+    await this.assertNotPlaying(userId);
+
+    return this.prisma.$transaction(async (tx) => {
+      const exits = await this.leaveWaitingLobbies(tx, userId, gameId);
+
+      const { count } = await tx.gamePlayer.updateMany({
+        where: {
+          gameId,
+          userId,
+          status: { in: ["INVITED", "LEFT"] },
+          game: { status: "WAITING" },
+        },
+        data: { status: "JOINED" },
+      });
+      if (count === 0) {
+        throw new NotFoundException(
+          errorBody(ErrorCode.INVITATION_NOT_FOUND, "Invitation introuvable"),
+        );
+      }
+
+      return exits;
+    });
+  }
+
+  async leaveGame(userId: string, gameId: string) {
+    await this.prisma.gamePlayer.updateMany({
+      where: { gameId, userId, status: "JOINED" },
+      data: { status: "LEFT" },
+    });
+  }
+
+  async cancelGame(gameId: string) {
+    await this.prisma.game.updateMany({
+      where: { id: gameId, status: { in: ["WAITING", "PLAYING"] } },
+      data: { status: "CANCELED" },
+    });
+  }
+
+  /** De quoi monter un salon en mémoire */
+  async getLobby(gameId: string) {
+    return this.prisma.game.findUniqueOrThrow({
+      where: { id: gameId },
+      select: {
+        id: true,
+        difficulty: true,
+        createdAt: true,
+        players: {
+          select: {
+            isHost: true,
+            status: true,
+            user: { select: publicUserSelect },
+          },
+        },
+      },
+    });
   }
 
   /** Invitations encore valables : partie en WAITING, créée il y a moins de 10 min */
@@ -161,7 +223,7 @@ export class GamesService implements OnApplicationBootstrap {
   }
 
   /**
-   * Une seule partie active par joueur : créer une
+   * Une seule partie active par joueur : créer ou rejoindre une
    * partie fait quitter les salons en attente, comme le solo annule sa session
    * précédente. Ceux qu'on hébergeait sont annulés, puisque l'hôte qui part annule
    * le salon.
@@ -169,19 +231,40 @@ export class GamesService implements OnApplicationBootstrap {
   private async leaveWaitingLobbies(
     tx: Prisma.TransactionClient,
     userId: string,
-  ) {
-    await tx.game.updateMany({
-      where: { status: "WAITING", players: { some: { userId, isHost: true } } },
-      data: { status: "CANCELED" },
+    exceptGameId?: string,
+  ): Promise<LobbyExits> {
+    // Lus avant la mise à jour : le moteur doit prévenir les autres joueurs de ces salons
+    const hosted = await tx.game.findMany({
+      where: {
+        id: { not: exceptGameId },
+        status: "WAITING",
+        players: { some: { userId, isHost: true } },
+      },
+      select: { id: true },
     });
-    await tx.gamePlayer.updateMany({
+    const joined = await tx.gamePlayer.findMany({
       where: {
         userId,
+        gameId: { not: exceptGameId },
         status: "JOINED",
         isHost: false,
         game: { status: "WAITING" },
       },
+      select: { gameId: true },
+    });
+
+    const canceledGameIds = hosted.map((g) => g.id);
+    const leftGameIds = joined.map((p) => p.gameId);
+
+    await tx.game.updateMany({
+      where: { id: { in: canceledGameIds } },
+      data: { status: "CANCELED" },
+    });
+    await tx.gamePlayer.updateMany({
+      where: { userId, gameId: { in: leftGameIds } },
       data: { status: "LEFT" },
     });
+
+    return { canceledGameIds, leftGameIds };
   }
 }

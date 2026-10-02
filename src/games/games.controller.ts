@@ -12,21 +12,22 @@ import { Throttle } from '@nestjs/throttler';
 import { CurrentUser } from 'src/auth/decorators/current-user.decorator';
 import type { JwtPayload } from 'src/auth/types/jwt-payload.type';
 import { CreateGameDto } from './dto/create-game.dto';
+import { GameEngineService } from './engine/game-engine.service';
 import { GamesService } from './games.service';
 
 @Controller('games')
 export class GamesController {
-	constructor(private readonly gamesService: GamesService) {}
+	// Création et refus passent par le moteur : il prévient les joueurs en direct
+	constructor(
+		private readonly gamesService: GamesService,
+		private readonly engine: GameEngineService,
+	) {}
 
 	@Throttle({ default: { limit: 10, ttl: 60000 } })
 	@Post()
 	@HttpCode(HttpStatus.CREATED)
 	async create(@Body() dto: CreateGameDto, @CurrentUser() user: JwtPayload) {
-		return this.gamesService.createGame(
-			user.sub,
-			dto.friendIds,
-			dto.difficulty,
-		);
+		return this.engine.createGame(user.sub, dto.friendIds, dto.difficulty);
 	}
 
 	@Get('invitations')
@@ -45,6 +46,6 @@ export class GamesController {
 		@Param('id', ParseUUIDPipe) id: string,
 		@CurrentUser() user: JwtPayload,
 	) {
-		await this.gamesService.declineInvitation(user.sub, id);
+		await this.engine.declineInvitation(user.sub, id);
 	}
 }
