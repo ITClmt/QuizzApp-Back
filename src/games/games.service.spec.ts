@@ -190,6 +190,18 @@ describe('GamesService', () => {
 	});
 
 	describe('declineInvitation', () => {
+		it('accepte aussi un invité parti du salon (il voit encore l’invitation)', async () => {
+			prisma.gamePlayer.updateMany.mockResolvedValue({ count: 1 });
+
+			await service.declineInvitation('me', 'g1');
+
+			expect(
+				prisma.gamePlayer.updateMany.mock.calls[0][0].where.status,
+			).toEqual({
+				in: ['INVITED', 'LEFT'],
+			});
+		});
+
 		it('lève INVITATION_NOT_FOUND si rien ne correspond', async () => {
 			prisma.gamePlayer.updateMany.mockResolvedValue({ count: 0 });
 

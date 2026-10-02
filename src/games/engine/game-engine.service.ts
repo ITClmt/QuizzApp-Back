@@ -208,7 +208,7 @@ export class GameEngineService {
 
 		// Les invitations restées sans réponse n'ont plus d'objet
 		for (const p of game.players.values()) {
-			if (p.status === 'INVITED') {
+			if (hasPendingInvitation(p)) {
 				this.emitter.toUser(p.user.id, 'invitation:canceled', {
 					gameId: game.id,
 				});
@@ -452,7 +452,7 @@ export class GameEngineService {
 		// Avant le lancement, les invitations sont encore affichées chez les invités
 		if (game.phase === 'LOBBY' || game.phase === 'STARTING') {
 			for (const player of game.players.values()) {
-				if (player.status === 'INVITED') {
+				if (hasPendingInvitation(player)) {
 					this.emitter.toUser(player.user.id, 'invitation:canceled', {
 						gameId: game.id,
 					});
@@ -609,6 +609,16 @@ export class GameEngineService {
 			).length,
 		};
 	}
+}
+
+/**
+ * Voit encore l'invitation sur son accueil : invité qui n'a pas répondu, ou qui
+ * a quitté le salon avant le lancement (il peut y revenir).
+ */
+function hasPendingInvitation(player: LivePlayer) {
+	return (
+		player.status === 'INVITED' || (player.status === 'LEFT' && !player.playing)
+	);
 }
 
 function toLiveQuestion({ id, question: q }: LoadedQuestion): LiveQuestion {

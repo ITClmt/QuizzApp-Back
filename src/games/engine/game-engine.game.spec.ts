@@ -164,6 +164,15 @@ describe('GameEngineService (partie)', () => {
 			expect(sentTo('eve', 'invitation:canceled')).toEqual([{ gameId: 'g1' }]);
 		});
 
+		it("annule aussi l'invitation d'un invité parti du salon avant le lancement", async () => {
+			await engine.join('eve', 's-eve', 'g1');
+			await engine.leave('eve', 'g1');
+
+			await engine.start('host', 'g1');
+
+			expect(sentTo('eve', 'invitation:canceled')).toEqual([{ gameId: 'g1' }]);
+		});
+
 		it('un invité ne peut plus rejoindre une partie lancée', async () => {
 			await engine.start('host', 'g1');
 
@@ -430,7 +439,7 @@ describe('GameEngineService (partie)', () => {
 
 			const { state } = await engine.join('bob', 's-bob-2', 'g1');
 
-			expect(state.question).toMatchObject({
+			expect(state?.question).toMatchObject({
 				question: 'q0 fr',
 				remainingMs: QUESTION_MS - 4_000,
 			});

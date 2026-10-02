@@ -218,12 +218,15 @@ export class GamesService implements OnApplicationBootstrap {
     return new Map(users.map((u) => [u.id, u.xp]));
   }
 
-  /** Invitations encore valables : partie en WAITING, créée il y a moins de 10 min */
+  /**
+   * Invitations encore valables : partie en WAITING, créée il y a moins de 10 min.
+   * LEFT compris : un invité qui a quitté le salon avant le lancement peut y revenir.
+   */
   async listInvitations(me: string) {
     const rows = await this.prisma.gamePlayer.findMany({
       where: {
         userId: me,
-        status: "INVITED",
+        status: { in: ["INVITED", "LEFT"] },
         game: {
           status: "WAITING",
           createdAt: { gt: new Date(Date.now() - LOBBY_TIMEOUT_MS) },
@@ -237,7 +240,11 @@ export class GamesService implements OnApplicationBootstrap {
             difficulty: true,
             createdAt: true,
             players: {
-              where: { status: { in: ["INVITED", "JOINED"] } },
+              // Soi-même compris même si on a quitté le salon : on compte les
+              // joueurs de la partie qu'on rejoindrait
+              where: {
+                OR: [{ status: { in: ["INVITED", "JOINED"] } }, { userId: me }],
+              },
               select: { isHost: true, user: { select: publicUserSelect } },
             },
           },
@@ -264,7 +271,7 @@ export class GamesService implements OnApplicationBootstrap {
       where: {
         gameId,
         userId: me,
-        status: "INVITED",
+        status: { in: ["INVITED", "LEFT"] },
         game: { status: "WAITING" },
       },
       data: { status: "DECLINED" },
