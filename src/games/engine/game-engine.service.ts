@@ -578,8 +578,11 @@ export class GameEngineService {
 			phase: game.phase,
 			questionIndex: index,
 			total: game.questions.length,
+			// Aussi pendant la révélation : l'écran en a besoin pour l'afficher
 			question:
-				game.phase === 'QUESTION' ? this.toQuestion(game, player) : null,
+				game.phase === 'QUESTION' || game.phase === 'REVEAL'
+					? this.toQuestion(game, player)
+					: null,
 			myAnswerIndex: player.answers.get(index)?.answerIndex ?? null,
 			answeredUserIds:
 				game.phase === 'QUESTION'

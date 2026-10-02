@@ -423,7 +423,8 @@ describe('GameEngineService (partie)', () => {
 				phase: 'REVEAL',
 				questionIndex: 0,
 				total: 3,
-				question: null,
+				// La question reste fournie : l'écran affiche la révélation dessus
+				question: expect.objectContaining({ index: 0, question: 'q0 fr' }),
 				remainingMs: REVEAL_MS - 1_000,
 				reveal: expect.objectContaining({ correctIndex: 0 }),
 				scores: [
