@@ -99,19 +99,30 @@ model Friendship {
 }
 
 model Game {
-  id        String     @id @default(uuid())
-  code      String     @unique
-  status    GameStatus @default(WAITING)
-  createdAt DateTime   @default(now())
+  id         String      @id @default(uuid())
+  // Optionnel tant que « rejoindre par code » n'existe pas
+  code       String?     @unique
+  status     GameStatus  @default(WAITING)
+  // null = mixte (toutes difficultés)
+  difficulty Difficulty?
+  createdAt  DateTime    @default(now())
+  startedAt  DateTime?
+  finishedAt DateTime?
 
   players       GamePlayer[]
   gameQuestions GameQuestion[]
+
+  @@index([status])
 }
 
 model GamePlayer {
-  id     String  @id @default(uuid())
-  score  Int     @default(0)
-  isHost Boolean @default(false)
+  id       String           @id @default(uuid())
+  // Une invitation = un GamePlayer au statut INVITED
+  status   GamePlayerStatus @default(INVITED)
+  isHost   Boolean          @default(false)
+  // Nombre de bonnes réponses
+  score    Int              @default(0)
+  xpEarned Int              @default(0)
 
   gameId String
   game   Game   @relation(fields: [gameId], references: [id], onDelete: Cascade)
@@ -119,7 +130,10 @@ model GamePlayer {
   userId String
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  answers GameAnswer[]
+
   @@unique([gameId, userId])
+  @@index([userId, status])
 }
 
 model GameQuestion {
@@ -132,7 +146,26 @@ model GameQuestion {
   questionId String
   question   Question @relation(fields: [questionId], references: [id])
 
+  answers GameAnswer[]
+
   @@unique([gameId, order])
+}
+
+// Pas de ligne = pas de réponse dans le temps imparti
+model GameAnswer {
+  id          String  @id @default(uuid())
+  answerIndex Int
+  isCorrect   Boolean
+  // Mesuré côté serveur, affiché seulement : n'entre jamais dans le score
+  responseMs  Int
+
+  gamePlayerId String
+  gamePlayer   GamePlayer @relation(fields: [gamePlayerId], references: [id], onDelete: Cascade)
+
+  gameQuestionId String
+  gameQuestion   GameQuestion @relation(fields: [gameQuestionId], references: [id], onDelete: Cascade)
+
+  @@unique([gamePlayerId, gameQuestionId])
 }
 
 model SoloSession {
@@ -176,6 +209,14 @@ enum GameStatus {
   WAITING
   PLAYING
   FINISHED
+  CANCELED
+}
+
+enum GamePlayerStatus {
+  INVITED
+  JOINED
+  DECLINED
+  LEFT
 }
 
 enum SoloSessionStatus {
