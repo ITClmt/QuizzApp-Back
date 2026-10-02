@@ -98,6 +98,34 @@ export class GamesGateway
 		});
 	}
 
+	@SubscribeMessage('game:start')
+	start(@ConnectedSocket() socket: GameSocket, @MessageBody() body: unknown) {
+		return this.handle(body, async (gameId) => {
+			await this.engine.start(socket.data.userId, gameId);
+			return null;
+		});
+	}
+
+	@SubscribeMessage('answer')
+	answer(@ConnectedSocket() socket: GameSocket, @MessageBody() body: unknown) {
+		return this.handle(body, async (gameId) => {
+			const { questionIndex, answerIndex } = body as {
+				questionIndex?: unknown;
+				answerIndex?: unknown;
+			};
+			if (!Number.isInteger(questionIndex) || !Number.isInteger(answerIndex)) {
+				throw new GameError(ErrorCode.INVALID_PAYLOAD);
+			}
+			this.engine.answer(
+				socket.data.userId,
+				gameId,
+				questionIndex as number,
+				answerIndex as number,
+			);
+			return null;
+		});
+	}
+
 	private async authenticate(socket: GameSocket) {
 		const token: unknown = socket.handshake.auth?.token;
 		if (typeof token !== 'string') throw new Error('missing token');

@@ -16,6 +16,19 @@ import { GAME_QUESTIONS, LOBBY_TIMEOUT_MS } from "./constants";
 /** Salons quittés au passage, pour que le moteur prévienne leurs autres joueurs */
 export type LobbyExits = { canceledGameIds: string[]; leftGameIds: string[] };
 
+export type FinishedPlayer = {
+  userId: string;
+  gamePlayerId: string;
+  score: number;
+  xpEarned: number;
+  answers: {
+    gameQuestionId: string;
+    answerIndex: number;
+    isCorrect: boolean;
+    responseMs: number;
+  }[];
+};
+
 @Injectable()
 export class GamesService implements OnApplicationBootstrap {
   private readonly logger = new Logger(GamesService.name);
@@ -127,6 +140,7 @@ export class GamesService implements OnApplicationBootstrap {
         createdAt: true,
         players: {
           select: {
+            id: true,
             isHost: true,
             status: true,
             user: { select: publicUserSelect },
@@ -134,6 +148,74 @@ export class GamesService implements OnApplicationBootstrap {
         },
       },
     });
+  }
+
+  /**
+   * Passe la partie en PLAYING et charge ce que le moteur garde en mémoire : les 15
+   * questions (dans les deux langues) et la langue de chaque joueur, lue maintenant
+   * plutôt qu'à la création du salon pour tenir compte d'un changement entre-temps.
+   */
+  async startGame(gameId: string, playerIds: string[]) {
+    const [, gameQuestions, users] = await this.prisma.$transaction([
+      this.prisma.game.update({
+        where: { id: gameId },
+        data: { status: "PLAYING", startedAt: new Date() },
+      }),
+      this.prisma.gameQuestion.findMany({
+        where: { gameId },
+        orderBy: { order: "asc" },
+        select: { id: true, question: true },
+      }),
+      this.prisma.user.findMany({
+        where: { id: { in: playerIds } },
+        select: { id: true, lang: true },
+      }),
+    ]);
+
+    return {
+      gameQuestions,
+      langByUserId: new Map(users.map((u) => [u.id, u.lang])),
+    };
+  }
+
+  /**
+   * Enregistre toute la partie en une transaction : réponses, scores, XP gagnée.
+   * Renvoie l'XP de chaque joueur avant la partie, pour calculer sa progression.
+   * Score et leaderboard ne bougent pas : ils restent propres au solo.
+   */
+  async finishGame(gameId: string, results: FinishedPlayer[]) {
+    const users = await this.prisma.user.findMany({
+      where: { id: { in: results.map((r) => r.userId) } },
+      select: { id: true, xp: true },
+    });
+
+    await this.prisma.$transaction([
+      this.prisma.gameAnswer.createMany({
+        data: results.flatMap((r) =>
+          r.answers.map((a) => ({ ...a, gamePlayerId: r.gamePlayerId })),
+        ),
+      }),
+      ...results.map((r) =>
+        this.prisma.gamePlayer.update({
+          where: { id: r.gamePlayerId },
+          data: { score: r.score, xpEarned: r.xpEarned },
+        }),
+      ),
+      ...results
+        .filter((r) => r.xpEarned > 0)
+        .map((r) =>
+          this.prisma.user.update({
+            where: { id: r.userId },
+            data: { xp: { increment: r.xpEarned } },
+          }),
+        ),
+      this.prisma.game.update({
+        where: { id: gameId },
+        data: { status: "FINISHED", finishedAt: new Date() },
+      }),
+    ]);
+
+    return new Map(users.map((u) => [u.id, u.xp]));
   }
 
   /** Invitations encore valables : partie en WAITING, créée il y a moins de 10 min */

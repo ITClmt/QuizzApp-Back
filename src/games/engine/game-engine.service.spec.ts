@@ -133,7 +133,9 @@ describe('GameEngineService (salon)', () => {
 				status: 'JOINED',
 				connected: true,
 			});
-			expect(lastLobby()).toEqual(lobby);
+			const { state, ...broadcast } = lobby;
+			expect(state).toBeNull();
+			expect(lastLobby()).toEqual(broadcast);
 		});
 
 		it("l'hôte rattache son socket sans repasser par la base", async () => {
