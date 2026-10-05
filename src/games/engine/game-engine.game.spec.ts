@@ -149,6 +149,7 @@ describe('GameEngineService (partie)', () => {
 				question: 'q0 en',
 				answers: ['right', 'w1', 'w2', 'w3'],
 				remainingMs: QUESTION_MS,
+				durationMs: QUESTION_MS,
 			});
 			expect(toBob).toMatchObject({
 				question: 'q0 fr',

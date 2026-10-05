@@ -555,6 +555,8 @@ export class GameEngineService {
 			hostId: game.hostId,
 			difficulty: game.difficulty,
 			phase: game.phase,
+			// Le front n'a pas à recopier la règle : il l'affiche telle quelle
+			minPlayers: MIN_PLAYERS_TO_START,
 			players: [...game.players.values()].map((p) => ({
 				user: p.user,
 				isHost: p.isHost,
@@ -580,6 +582,8 @@ export class GameEngineService {
 			// Durée restante plutôt qu'une heure absolue : les horloges des téléphones
 			// ne sont pas synchronisées avec celle du serveur
 			remainingMs: Math.max(0, game.phaseEndsAt - Date.now()),
+			// Durée totale, pour que le chrono du client parte de la bonne valeur
+			durationMs: QUESTION_MS,
 		};
 	}
 
