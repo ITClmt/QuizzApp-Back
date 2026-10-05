@@ -10,6 +10,7 @@ import { FriendsService } from "src/friends/friends.service";
 import { Difficulty, Prisma } from "src/generated/prisma/client";
 import { PrismaService } from "src/prisma/prisma.service";
 import { QuizService } from "src/quiz/quiz.service";
+import { ScoreService } from "src/score/score.service";
 import { publicUserSelect, toPublicUser } from "src/users/utils/public-user";
 import { GAME_QUESTIONS, LOBBY_TIMEOUT_MS } from "./constants";
 
@@ -21,6 +22,8 @@ export type FinishedPlayer = {
   gamePlayerId: string;
   score: number;
   xpEarned: number;
+  /** Bonnes réponses par difficulté de question : alimente Score, comme en solo */
+  pointsByDifficulty: Partial<Record<Difficulty, number>>;
   answers: {
     gameQuestionId: string;
     answerIndex: number;
@@ -37,6 +40,7 @@ export class GamesService implements OnApplicationBootstrap {
     private readonly prisma: PrismaService,
     private readonly friendsService: FriendsService,
     private readonly quizService: QuizService,
+    private readonly scoreService: ScoreService,
   ) {}
 
   /**
@@ -179,9 +183,10 @@ export class GamesService implements OnApplicationBootstrap {
   }
 
   /**
-   * Enregistre toute la partie en une transaction : réponses, scores, XP gagnée.
+   * Enregistre toute la partie en une transaction : réponses, scores de la partie,
+   * XP gagnée et points de Score par difficulté (le classement compte les bonnes
+   * réponses du solo comme du multijoueur).
    * Renvoie l'XP de chaque joueur avant la partie, pour calculer sa progression.
-   * Score et leaderboard ne bougent pas : ils restent propres au solo.
    */
   async finishGame(gameId: string, results: FinishedPlayer[]) {
     const users = await this.prisma.user.findMany({
@@ -209,6 +214,15 @@ export class GamesService implements OnApplicationBootstrap {
             data: { xp: { increment: r.xpEarned } },
           }),
         ),
+      ...results.flatMap((r) =>
+        Object.entries(r.pointsByDifficulty).map(([difficulty, points]) =>
+          this.scoreService.getUpsertOperation(
+            r.userId,
+            difficulty as Difficulty,
+            points,
+          ),
+        ),
+      ),
       this.prisma.game.update({
         where: { id: gameId },
         data: { status: "FINISHED", finishedAt: new Date() },

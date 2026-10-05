@@ -309,12 +309,14 @@ describe('GameEngineService (partie)', () => {
 					gamePlayerId: 'gp-host',
 					score: 2,
 					xpEarned: 35,
+					pointsByDifficulty: { easy: 1, hard: 1 },
 				}),
 				expect.objectContaining({
 					userId: 'bob',
 					gamePlayerId: 'gp-bob',
 					score: 1,
 					xpEarned: 14,
+					pointsByDifficulty: { medium: 1 },
 				}),
 			]);
 			expect(results[0].answers).toHaveLength(3);
@@ -365,6 +367,8 @@ describe('GameEngineService (partie)', () => {
 			expect(results.find((r) => r.userId === 'bob')).toMatchObject({
 				score: 1,
 				xpEarned: 0,
+				// Sa bonne réponse reste enregistrée, mais ne rapporte rien
+				pointsByDifficulty: {},
 			});
 			const [end] = sentTo('host', 'game:end');
 			expect(end.ranking.at(-1)).toMatchObject({

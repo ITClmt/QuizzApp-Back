@@ -321,8 +321,10 @@ export class GameEngineService {
 			userId: p.user.id,
 			gamePlayerId: p.gamePlayerId,
 			score: p.score,
-			// Abandon : 0 XP, mais ses réponses sont gardées
-			xpEarned: p.status === 'JOINED' ? this.xpFor(game, p) : 0,
+			// Abandon : ni XP ni points de Score, mais ses réponses sont gardées
+			...(p.status === 'JOINED'
+				? this.rewardsFor(game, p)
+				: { xpEarned: 0, pointsByDifficulty: {} }),
 			answers: [...p.answers].map(([index, answer]) => ({
 				gameQuestionId: game.questions[index].gameQuestionId,
 				...answer,
@@ -523,14 +525,24 @@ export class GameEngineService {
 		);
 	}
 
-	private xpFor(game: LiveGame, player: LivePlayer) {
-		let xp = 0;
+	/**
+	 * Ce que rapportent les bonnes réponses, chacune selon la difficulté de SA
+	 * question (une partie mixte en mélange) : l'XP, et les points de Score par
+	 * difficulté — les mêmes règles que le solo.
+	 */
+	private rewardsFor(game: LiveGame, player: LivePlayer) {
+		let xpEarned = 0;
+		const pointsByDifficulty: Partial<Record<Difficulty, number>> = {};
 		for (const [index, answer] of player.answers) {
 			if (!answer.isCorrect) continue;
-			const difficulty = game.questions[index].difficulty.toLowerCase();
-			xp += XP_PER_DIFFICULTY[difficulty as Difficulty];
+			const difficulty = game.questions[
+				index
+			].difficulty.toLowerCase() as Difficulty;
+			xpEarned += XP_PER_DIFFICULTY[difficulty];
+			pointsByDifficulty[difficulty] =
+				(pointsByDifficulty[difficulty] ?? 0) + 1;
 		}
-		return xp;
+		return { xpEarned, pointsByDifficulty };
 	}
 
 	private broadcastLobby(game: LiveGame) {

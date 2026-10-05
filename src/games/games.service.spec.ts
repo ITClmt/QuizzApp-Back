@@ -6,6 +6,7 @@ import {
 import { FriendsService } from 'src/friends/friends.service';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { QuizService } from 'src/quiz/quiz.service';
+import { ScoreService } from 'src/score/score.service';
 import { GAME_QUESTIONS } from './constants';
 import { GamesService } from './games.service';
 
@@ -15,21 +16,33 @@ describe('GamesService', () => {
 		gamePlayer: { findMany: jest.fn(), updateMany: jest.fn() },
 	};
 	const prisma = {
-		game: { updateMany: jest.fn() },
+		game: { updateMany: jest.fn(), update: jest.fn() },
+		gameAnswer: { createMany: jest.fn() },
+		user: { findMany: jest.fn(), update: jest.fn() },
 		gamePlayer: {
 			findFirst: jest.fn(),
 			findMany: jest.fn(),
 			updateMany: jest.fn(),
+			update: jest.fn(),
 		},
-		$transaction: jest.fn((fn: (t: typeof tx) => unknown) => fn(tx)),
+		// Forme callback (createGame…) ou tableau d'opérations (finishGame)
+		$transaction: jest.fn((arg: unknown) =>
+			typeof arg === 'function' ? arg(tx) : Promise.all(arg as unknown[]),
+		),
 	};
 	const friendsService = { assertAllFriends: jest.fn() };
 	const quizService = { pickRandomQuestions: jest.fn() };
+	const scoreService = {
+		getUpsertOperation: jest.fn((userId, difficulty, points) => ({
+			upsert: { userId, difficulty, points },
+		})),
+	};
 
 	const service = new GamesService(
 		prisma as unknown as PrismaService,
 		friendsService as unknown as FriendsService,
 		quizService as unknown as QuizService,
+		scoreService as unknown as ScoreService,
 	);
 
 	beforeEach(() => jest.clearAllMocks());
@@ -218,6 +231,46 @@ describe('GamesService', () => {
 			await expect(service.getActiveGame('me')).resolves.toEqual({
 				game: null,
 			});
+		});
+	});
+
+	describe('finishGame', () => {
+		it('crédite XP et points de Score par difficulté, dans la même transaction', async () => {
+			prisma.user.findMany.mockResolvedValue([
+				{ id: 'alice', xp: 100 },
+				{ id: 'bob', xp: 0 },
+			]);
+
+			const xpBefore = await service.finishGame('g1', [
+				{
+					userId: 'alice',
+					gamePlayerId: 'gp-a',
+					score: 3,
+					xpEarned: 49,
+					pointsByDifficulty: { easy: 1, hard: 2 },
+					answers: [],
+				},
+				// Abandon : rien à créditer
+				{
+					userId: 'bob',
+					gamePlayerId: 'gp-b',
+					score: 1,
+					xpEarned: 0,
+					pointsByDifficulty: {},
+					answers: [],
+				},
+			]);
+
+			expect(scoreService.getUpsertOperation.mock.calls).toEqual([
+				['alice', 'easy', 1],
+				['alice', 'hard', 2],
+			]);
+			const operations = prisma.$transaction.mock.calls[0][0] as unknown[];
+			expect(operations).toContainEqual({
+				upsert: { userId: 'alice', difficulty: 'hard', points: 2 },
+			});
+			expect(prisma.user.update).toHaveBeenCalledTimes(1);
+			expect(xpBefore.get('alice')).toBe(100);
 		});
 	});
 
