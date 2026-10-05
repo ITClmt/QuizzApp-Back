@@ -45,6 +45,8 @@ model Question {
   category     String
   difficulty   String
   createdAt    DateTime @default(now())
+  // Retirée du tirage sans être supprimée : l'historique des parties la référence encore
+  retiredAt    DateTime?
 
   tags          Tag[]
   gameQuestions GameQuestion[]

@@ -79,7 +79,8 @@ export class QuizService {
 
 		const rows = await this.prisma.$queryRaw<{ id: string }[]>`
 			SELECT id FROM "Question"
-			WHERE (${difficultyFilter}::text IS NULL OR difficulty = ${difficultyFilter})
+			WHERE "retiredAt" IS NULL
+				AND (${difficultyFilter}::text IS NULL OR difficulty = ${difficultyFilter})
 				AND (${categoryFilter}::text IS NULL OR category = ${categoryFilter})
 			ORDER BY random()
 			LIMIT ${count}
