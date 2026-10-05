@@ -26,11 +26,7 @@ export const QUIZ_CATEGORIES: QuizCategory[] = [
 		unlockLevel: 2,
 	},
 	{ id: '22', name: 'Geography', unlockLevel: 3 },
-	{
-		id: '21',
-		name: 'Sports',
-		unlockLevel: SIDELINED_UNLOCK_LEVEL,
-	},
+	{ id: '21', name: 'Sports', unlockLevel: 7 },
 	{ id: '23', name: 'History', unlockLevel: 4 },
 	{
 		id: '27',
