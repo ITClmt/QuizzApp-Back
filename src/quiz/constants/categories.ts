@@ -18,12 +18,7 @@ export const QUIZ_CATEGORIES: QuizCategory[] = [
 		name: 'General Knowledge',
 		unlockLevel: 0,
 	},
-	// hard only has 49 questions
-	{
-		id: '11',
-		name: 'Film',
-		unlockLevel: SIDELINED_UNLOCK_LEVEL,
-	},
+	{ id: '11', name: 'Film', unlockLevel: 6 },
 	{ id: '12', name: 'Music', unlockLevel: 1 },
 	{
 		id: '15',
