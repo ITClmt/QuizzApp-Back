@@ -212,7 +212,7 @@ describe('GameEngineService (partie)', () => {
 			});
 		});
 
-		it('sans réponse, révèle après 10 s + la marge de latence', () => {
+		it('sans réponse, révèle après la durée de la question + la marge de latence', () => {
 			jest.advanceTimersByTime(QUESTION_MS);
 			expect(lastReveal()).toBeUndefined();
 
