@@ -96,7 +96,7 @@ const QUESTIONS: Array<{
 		questionEn: 'Which programming language was created by Guido van Rossum?',
 		answersEn: ['Java', 'Python', 'Ruby', 'C++'],
 		correctIndex: 1,
-		category: 'Science: Computers',
+		category: 'Computers',
 		difficulty: 'medium',
 	},
 	{
@@ -104,7 +104,7 @@ const QUESTIONS: Array<{
 		questionEn: 'What is the smallest prime number?',
 		answersEn: ['0', '1', '2', '3'],
 		correctIndex: 2,
-		category: 'Science: Mathematics',
+		category: 'Mathematics',
 		difficulty: 'medium',
 	},
 	{
@@ -112,7 +112,7 @@ const QUESTIONS: Array<{
 		questionEn: 'Which video game franchise features a character named Link?',
 		answersEn: ['Final Fantasy', 'The Legend of Zelda', 'Metroid', 'Kirby'],
 		correctIndex: 1,
-		category: 'Entertainment: Video Games',
+		category: 'Video Games',
 		difficulty: 'medium',
 	},
 	{
@@ -133,7 +133,7 @@ const QUESTIONS: Array<{
 			'Pablo Neruda',
 		],
 		correctIndex: 0,
-		category: 'Entertainment: Books',
+		category: 'Books',
 		difficulty: 'hard',
 	},
 	{
@@ -167,7 +167,7 @@ const QUESTIONS: Array<{
 		questionEn: 'What is the time complexity of binary search?',
 		answersEn: ['O(n)', 'O(n log n)', 'O(log n)', 'O(1)'],
 		correctIndex: 2,
-		category: 'Science: Computers',
+		category: 'Computers',
 		difficulty: 'hard',
 	},
 	{

@@ -7,7 +7,7 @@ import { ErrorCode, errorBody } from '../common/error-codes';
 import { Difficulty, Question } from '../generated/prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { ScoreService } from '../score/score.service';
-import { getCategoryOtdName } from './constants/categories';
+import { getCategoryName } from './constants/categories';
 import { XP_PER_DIFFICULTY } from './constants/xp';
 import { AnswerDto } from './dto/finish-session.dto';
 import { GetHistoryDto } from './dto/get-history.dto';
@@ -73,9 +73,9 @@ export class QuizService {
 		category?: string;
 		count: number;
 	}): Promise<Question[]> {
-		const otdCategory = category ? getCategoryOtdName(category) : undefined;
+		const categoryName = category ? getCategoryName(category) : undefined;
 		const difficultyFilter = difficulty ?? null;
-		const categoryFilter = otdCategory ?? null;
+		const categoryFilter = categoryName ?? null;
 
 		const rows = await this.prisma.$queryRaw<{ id: string }[]>`
 			SELECT id FROM "Question"

@@ -123,7 +123,7 @@ GET    /api/users/:id
 PATCH  /api/users/:id                     owner or ADMIN only
 DELETE /api/users/:id                     owner or ADMIN only
 
-GET    /api/quiz/categories                curated OTD subset, unlock status per user level
+GET    /api/quiz/categories                curated subset, unlock status per user level
 GET    /api/quiz/questions                ?difficulty&category
 POST   /api/quiz/start                    ?difficulty&category
 POST   /api/quiz/finish
@@ -173,7 +173,7 @@ CORS reuses `corsOrigin()` (`src/common/cors.ts`) through `SocketIoAdapter` — 
 
 - **User** — `username` (unique), `email` (unique), `role` (USER|ADMIN), `lang`, `xp` (uncapped, drives the derived level via `src/quiz/utils/level.util.ts`, capped display at level 50)
 - **RefreshToken** — hashed token, `expiresAt`, cascade delete on user
-- **Question** — harvested offline from OpenTriviaDB via `local-scripts/harvest-otd-questions.ts` (translated to FR via DeepL), upserted by `sourceId`. Indexed on `(difficulty)`, `(category)`, `(category, difficulty)`. `category` stores OTD's display name (mapped from the route's numeric category id via `getCategoryOtdName` in `src/quiz/constants/categories.ts`)
+- **Question** — harvested offline from OpenTriviaDB via `local-scripts/harvest-otd-questions.ts` (translated to FR via DeepL), upserted by `sourceId` (prefixed `otd-`; generated ones `gen-`). Indexed on `(difficulty)`, `(category)`, `(category, difficulty)`. `category` stores the category's `name` from `QUIZ_CATEGORIES` (mapped from the route's numeric category id via `getCategoryName` in `src/quiz/constants/categories.ts`), not the source's original label (`Video Games`, not `Entertainment: Video Games`)
 - **Tag** — internal sub-category (`slug` unique, e.g. `football`, `ligue-1`), never shown to players. Many-to-many with Question (implicit relation, table `_QuestionToTag`), 0..n tags per question. Free-floating: not tied to `Question.category`, so one tag can span several categories. OTD-harvested questions have no tags; tags come from `local-scripts/generate-questions.ts` (Gemini, review in `generated/pending.json`, then `import-questions.ts`, which also rejects any category outside `QUIZ_CATEGORIES`)
 - **SoloSession** — status: IN_PROGRESS | FINISHED | EXPIRED. Indexed on `(userId, status)`, `(status, expiresAt)`
 - **SoloAnswer** — unique `(sessionId, questionId)`

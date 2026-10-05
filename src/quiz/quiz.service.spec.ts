@@ -43,7 +43,7 @@ describe('QuizService', () => {
 			expect(values).toEqual([null, null, null, null, 15]);
 		});
 
-		it("traduit l'id de catégorie en nom OTD", async () => {
+		it("traduit l'id de catégorie en son nom", async () => {
 			prisma.$queryRaw.mockResolvedValue([{ id: 'a' }]);
 			prisma.question.findMany.mockResolvedValue([{ id: 'a' }]);
 
