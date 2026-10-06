@@ -33,6 +33,11 @@ export class GameEmitter {
 		this.server?.in(userRoom(userId)).socketsLeave(gameRoom(gameId));
 	}
 
+	/** Coupe tous les appareils d'un joueur (compte supprimé) */
+	disconnectUser(userId: string) {
+		this.server?.in(userRoom(userId)).disconnectSockets(true);
+	}
+
 	/** Vide la room d'une partie terminée ou annulée */
 	closeGameRoom(gameId: string) {
 		this.server?.in(gameRoom(gameId)).socketsLeave(gameRoom(gameId));

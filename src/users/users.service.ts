@@ -136,7 +136,6 @@ export class UsersService {
 		const target = await this.findById(id);
 
 		const data: Prisma.UserUpdateInput = {};
-		if (updateUserDto.email !== undefined) data.email = updateUserDto.email;
 		if (updateUserDto.username !== undefined)
 			data.username = updateUserDto.username;
 		if (updateUserDto.lang !== undefined) data.lang = updateUserDto.lang;
@@ -162,10 +161,5 @@ export class UsersService {
 		} catch (error) {
 			this.handlePrismaError(error);
 		}
-	}
-
-	async delete(id: string) {
-		await this.findById(id);
-		await this.prisma.user.delete({ where: { id } });
 	}
 }

@@ -2,7 +2,6 @@ import {
 	Body,
 	Controller,
 	DefaultValuePipe,
-	Delete,
 	ForbiddenException,
 	Get,
 	HttpCode,
@@ -80,15 +79,5 @@ export class UsersController {
 	) {
 		this.assertOwnerOrAdmin(user, id);
 		return this.userService.update(id, updateUserDto);
-	}
-
-	@Delete(':id')
-	@HttpCode(HttpStatus.NO_CONTENT)
-	async delete(
-		@Param('id', ParseUUIDPipe) id: string,
-		@CurrentUser() user: JwtPayload,
-	): Promise<void> {
-		this.assertOwnerOrAdmin(user, id);
-		await this.userService.delete(id);
 	}
 }

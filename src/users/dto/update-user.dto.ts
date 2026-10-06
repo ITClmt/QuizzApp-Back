@@ -1,5 +1,4 @@
 import {
-	IsEmail,
 	IsIn,
 	IsOptional,
 	IsString,
@@ -10,10 +9,6 @@ import { IsNotForbiddenWord } from 'src/common/validators/is-not-forbidden-word.
 import { AVATAR_SLUGS } from '../constants/avatars';
 
 export class UpdateUserDto {
-	@IsOptional()
-	@IsEmail()
-	email?: string;
-
 	@IsOptional()
 	@IsString()
 	@MinLength(3, { message: 'Name must be at least 3 characters long' })

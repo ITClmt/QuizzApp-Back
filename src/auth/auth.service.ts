@@ -70,6 +70,25 @@ export class AuthService {
 		};
 	}
 
+	/** Nouvelle paire de tokens pour un utilisateur déjà authentifié autrement */
+	issueTokens(user: {
+		id: string;
+		email: string;
+		role: string;
+		username: string;
+		lang: string;
+		avatarSlug: string;
+	}) {
+		return this.generateAndSaveTokens(
+			user.id,
+			user.email,
+			user.role,
+			user.username,
+			user.lang,
+			user.avatarSlug,
+		);
+	}
+
 	private async findValidRefreshToken(refreshToken: string) {
 		let payload: { sub: string };
 		try {

@@ -45,10 +45,11 @@ src/
 │       ├── roles.decorator.ts        # @Roles(Role.ADMIN)
 │       └── current-user.decorator.ts # @CurrentUser() — injects JwtPayload from req.user
 ├── users/                   # User CRUD
-│   ├── users.controller.ts  # PATCH/DELETE protected by assertOwnerOrAdmin()
+│   ├── users.controller.ts  # PATCH protected by assertOwnerOrAdmin()
 │   └── dto/
-│       ├── create-user.dto.ts   # email, username, password (min 8 / max 128), lang
-│       └── update-user.dto.ts   # email, username, lang only — password change NOT supported
+│       ├── create-user.dto.ts   # email, username, password (@IsStrongPassword), lang
+│       └── update-user.dto.ts   # username, lang, avatarSlug — no email, no password
+├── account/                 # /users/me/password + DELETE /users/me (needs Auth + Games modules)
 ├── quiz/                    # Quiz sessions
 │   ├── quiz.controller.ts   # start, finish, cancel session + validateAnswer
 │   └── quiz.service.ts      # serves questions from the local Question pool, manages SoloSession
@@ -124,8 +125,9 @@ GET    /api/users                         @Roles(ADMIN)
 GET    /api/users/avatars                 avatar catalog + unlock status per user level
 GET    /api/users/me                      current user's own profile + pendingFriendRequests (profile badge)
 GET    /api/users/:id
-PATCH  /api/users/:id                     owner or ADMIN only
-DELETE /api/users/:id                     owner or ADMIN only
+PATCH  /api/users/:id                     owner or ADMIN only — username, lang, avatarSlug
+PATCH  /api/users/me/password             { currentPassword, newPassword } — revokes every refresh token, returns a fresh pair for this device; 5 req/15min
+DELETE /api/users/me                      { password } — 409 ALREADY_IN_GAME if JOINED in a WAITING/PLAYING game; declines pending invitations through the engine, cascades, disconnects sockets; 5 req/15min
 
 GET    /api/quiz/categories                curated subset, unlock status per user level
 GET    /api/quiz/questions                ?difficulty&category
@@ -191,7 +193,8 @@ CORS reuses `corsOrigin()` (`src/common/cors.ts`) through `SocketIoAdapter` — 
 
 - DTOs use `class-validator`. `ValidationPipe` has `whitelist: true` + `forbidNonWhitelisted: true` — unknown fields are rejected with 400.
 - `username` in `CreateUserDto`/`UpdateUserDto` is checked against a profanity/slur filter via the `@IsNotForbiddenWord()` custom validator (`src/common/validators/is-not-forbidden-word.decorator.ts`). Matching engine: `obscenity` (`src/common/moderation/profanity.ts`), combining its built-in English dataset with a French word list sourced from the community LDNOOBW repo (`src/common/moderation/forbidden-words.fr.ts`, with a few upstream entries dropped as Scunthorpe-style false positives — see file comment). French words are matched whole-word only (`|word|` boundary patterns) and accent-normalized via a custom transformer, since `obscenity`'s built-in transformers are ASCII-only. Perspective API (Google/Jigsaw) was considered and rejected: it's sunsetting (service ends 2026-12-31, no new quota requests accepted since 2026-02), needs a synchronous external call on the register path, and its toxicity model isn't tuned for single-token strings like usernames.
-- Password changes are **not supported** via PATCH /users/:id. A forgotten password goes through the reset flow: a 6-digit code (argon2-hashed in `PasswordResetCode`, one row per user, 15 min, 5 attempts consumed atomically *before* verification, 60 s resend cooldown) sent by `MailService` (`src/mail/`, Resend HTTP API via native `fetch`, FR/EN template from `User.lang`). Every failure returns the same `AUTH_RESET_CODE_INVALID`. Without `RESEND_API_KEY` (local dev) the code is logged instead of sent. The password rules live in `@IsStrongPassword()` (`src/common/validators/is-strong-password.decorator.ts`), shared by register and reset. A "change password while logged in" endpoint does not exist yet.
+- Account actions live in `src/account/` (`AccountController` on `users/me`): changing the password and deleting the account both re-check the password and answer a wrong one with **400 `AUTH_WRONG_PASSWORD`, never 401** (a 401 would make the front refresh its token and retry). There is **no `DELETE /users/:id` anymore** (removed 2026-10-06: it needed no password, and on a separate controller it would have shadowed `DELETE /users/me`). A deleted user's access token stays valid until it expires (≤ 15 min, `AuthGuard` doesn't hit the DB) — accepted trade-off. Email can't be changed (removed from `UpdateUserDto`; doing it right needs a verification of the new address).
+- A forgotten password goes through the reset flow: a 6-digit code (argon2-hashed in `PasswordResetCode`, one row per user, 15 min, 5 attempts consumed atomically *before* verification, 60 s resend cooldown) sent by `MailService` (`src/mail/`, Resend HTTP API via native `fetch`, FR/EN template from `User.lang`). Every failure returns the same `AUTH_RESET_CODE_INVALID`. Without `RESEND_API_KEY` (local dev) the code is logged instead of sent. The password rules live in `@IsStrongPassword()` (`src/common/validators/is-strong-password.decorator.ts`), shared by register and reset.
 - Avatars follow the same architecture as quiz categories: a static catalog in code
   (`src/users/constants/avatars.ts`) with a per-avatar `unlockLevel`, and ownership **derived**
   from `getLevelFromXp(user.xp)` — never persisted, so there is no unlock table to migrate or

@@ -13,5 +13,6 @@ import { GamesService } from './games.service';
 	imports: [PrismaModule, FriendsModule, QuizModule, ScoreModule],
 	controllers: [GamesController],
 	providers: [GamesService, GameEmitter, GameEngineService, GamesGateway],
+	exports: [GamesService, GameEmitter, GameEngineService],
 })
 export class GamesModule {}
