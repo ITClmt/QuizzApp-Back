@@ -47,6 +47,7 @@ describe('GameEngineService (salon)', () => {
 				.mockResolvedValue({ canceledGameIds: [], leftGameIds: [] }),
 			leaveGame: jest.fn(),
 			cancelGame: jest.fn(),
+			setDifficulty: jest.fn(),
 		};
 		emitter = {
 			toUser: jest.fn(),
@@ -268,6 +269,81 @@ describe('GameEngineService (salon)', () => {
 		expect(lastLobby().players.find((p) => p.user.id === 'bob').connected).toBe(
 			true,
 		);
+	});
+
+	describe('prêt', () => {
+		const bob = () => lastLobby().players.find((p) => p.user.id === 'bob');
+
+		beforeEach(async () => {
+			await engine.join('bob', 's-bob', 'g1');
+		});
+
+		it('un joueur arrive pas prêt, puis se met prêt', () => {
+			expect(bob().ready).toBe(false);
+
+			engine.setReady('bob', 'g1', true);
+
+			expect(bob().ready).toBe(true);
+		});
+
+		it("l'hôte n'a pas de bouton prêt", () => {
+			expect(() => engine.setReady('host', 'g1', true)).toThrow(
+				new GameError('INVALID_PAYLOAD'),
+			);
+		});
+
+		it("un invité qui n'a pas rejoint ne peut pas se mettre prêt", () => {
+			expect(() => engine.setReady('eve', 'g1', true)).toThrow(
+				new GameError('NOT_A_PLAYER'),
+			);
+		});
+
+		it('quitter puis revenir remet à « pas prêt »', async () => {
+			engine.setReady('bob', 'g1', true);
+			await engine.leave('bob', 'g1');
+			await engine.join('bob', 's-bob-2', 'g1');
+
+			expect(bob().ready).toBe(false);
+		});
+
+		it('une déconnexion garde le « prêt »', () => {
+			engine.setReady('bob', 'g1', true);
+			engine.disconnect('bob', 's-bob', 'g1');
+
+			expect(bob()).toMatchObject({ ready: true, connected: false });
+		});
+	});
+
+	describe('difficulté', () => {
+		it("l'hôte la change : tout le monde repasse pas prêt, les invités sont prévenus", async () => {
+			await engine.join('bob', 's-bob', 'g1');
+			engine.setReady('bob', 'g1', true);
+			jest.clearAllMocks();
+
+			await engine.setDifficulty('host', 'g1', 'hard');
+
+			expect(lastLobby()).toMatchObject({ difficulty: 'hard' });
+			expect(lastLobby().players.every((p) => !p.ready)).toBe(true);
+			expect(gamesService.setDifficulty).toHaveBeenCalledWith('g1', 'hard');
+			expect(emitted()).toContainEqual(['user:eve', 'invitation:updated']);
+			// bob est dans le salon : le lobby:update suffit
+			expect(emitted()).not.toContainEqual(['user:bob', 'invitation:updated']);
+		});
+
+		it('réservée à l’hôte', async () => {
+			await engine.join('bob', 's-bob', 'g1');
+
+			await expect(engine.setDifficulty('bob', 'g1', 'hard')).rejects.toEqual(
+				new GameError('NOT_HOST'),
+			);
+		});
+
+		it('même difficulté : rien ne change', async () => {
+			await engine.setDifficulty('host', 'g1', null);
+
+			expect(gamesService.setDifficulty).not.toHaveBeenCalled();
+			expect(emitter.toGame).not.toHaveBeenCalled();
+		});
 	});
 
 	it('annule le salon au bout de 10 min', async () => {

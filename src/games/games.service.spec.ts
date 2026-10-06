@@ -17,6 +17,7 @@ describe('GamesService', () => {
 	};
 	const prisma = {
 		game: { updateMany: jest.fn(), update: jest.fn() },
+		gameQuestion: { createMany: jest.fn(), findMany: jest.fn() },
 		gameAnswer: { createMany: jest.fn() },
 		user: { findMany: jest.fn(), update: jest.fn() },
 		gamePlayer: {
@@ -50,16 +51,12 @@ describe('GamesService', () => {
 	describe('createGame', () => {
 		beforeEach(() => {
 			prisma.gamePlayer.findFirst.mockResolvedValue(null);
-			quizService.pickRandomQuestions.mockResolvedValue([
-				{ id: 'q1' },
-				{ id: 'q2' },
-			]);
 			tx.game.create.mockResolvedValue({ id: 'game-1' });
 			tx.game.findMany.mockResolvedValue([]);
 			tx.gamePlayer.findMany.mockResolvedValue([]);
 		});
 
-		it("crée la partie : hôte JOINED, amis INVITED, questions dans l'ordre", async () => {
+		it('crée la partie : hôte JOINED, amis INVITED, sans questions', async () => {
 			const result = await service.createGame('host', ['f1', 'f2'], 'medium');
 
 			expect(result).toEqual({
@@ -67,10 +64,8 @@ describe('GamesService', () => {
 				canceledGameIds: [],
 				leftGameIds: [],
 			});
-			expect(quizService.pickRandomQuestions).toHaveBeenCalledWith({
-				difficulty: 'medium',
-				count: GAME_QUESTIONS,
-			});
+			// Tirées au lancement : la difficulté peut changer dans le salon
+			expect(quizService.pickRandomQuestions).not.toHaveBeenCalled();
 			const { data } = tx.game.create.mock.calls[0][0];
 			expect(data.difficulty).toBe('medium');
 			expect(data.players.create).toEqual([
@@ -78,10 +73,7 @@ describe('GamesService', () => {
 				{ userId: 'f1' },
 				{ userId: 'f2' },
 			]);
-			expect(data.gameQuestions.create).toEqual([
-				{ questionId: 'q1', order: 0 },
-				{ questionId: 'q2', order: 1 },
-			]);
+			expect(data.gameQuestions).toBeUndefined();
 		});
 
 		it('sans difficulté : partie mixte (null)', async () => {
@@ -230,6 +222,61 @@ describe('GamesService', () => {
 
 			await expect(service.getActiveGame('me')).resolves.toEqual({
 				game: null,
+			});
+		});
+	});
+
+	describe('setDifficulty', () => {
+		it('ne touche qu’un salon encore en attente', async () => {
+			await service.setDifficulty('g1', 'hard');
+
+			expect(prisma.game.updateMany).toHaveBeenCalledWith({
+				where: { id: 'g1', status: 'WAITING' },
+				data: { difficulty: 'hard' },
+			});
+		});
+	});
+
+	describe('startGame', () => {
+		beforeEach(() => {
+			quizService.pickRandomQuestions.mockResolvedValue([
+				{ id: 'q1' },
+				{ id: 'q2' },
+			]);
+			prisma.gameQuestion.findMany.mockResolvedValue([]);
+			prisma.user.findMany.mockResolvedValue([{ id: 'host', lang: 'fr' }]);
+		});
+
+		it("tire les questions dans la difficulté du salon et les enregistre dans l'ordre", async () => {
+			const { langByUserId } = await service.startGame(
+				'g1',
+				['host'],
+				'medium',
+			);
+
+			expect(quizService.pickRandomQuestions).toHaveBeenCalledWith({
+				difficulty: 'medium',
+				count: GAME_QUESTIONS,
+			});
+			expect(prisma.gameQuestion.createMany).toHaveBeenCalledWith({
+				data: [
+					{ gameId: 'g1', questionId: 'q1', order: 0 },
+					{ gameId: 'g1', questionId: 'q2', order: 1 },
+				],
+			});
+			expect(prisma.game.update.mock.calls[0][0].data).toMatchObject({
+				status: 'PLAYING',
+				difficulty: 'medium',
+			});
+			expect(langByUserId.get('host')).toBe('fr');
+		});
+
+		it('partie mixte : tirage sans filtre de difficulté', async () => {
+			await service.startGame('g1', ['host'], null);
+
+			expect(quizService.pickRandomQuestions).toHaveBeenCalledWith({
+				difficulty: undefined,
+				count: GAME_QUESTIONS,
 			});
 		});
 	});

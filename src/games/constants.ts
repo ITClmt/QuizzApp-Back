@@ -10,6 +10,8 @@ export const LOBBY_TIMEOUT_MS = 10 * 60 * 1000;
 // Une partie : 2 à 4 joueurs. Il en faut au moins 2 en JOINED pour lancer.
 export const MIN_PLAYERS_TO_START = 2;
 
+// Décompte entre le lancement et la 1re question : l'hôte n'a pas d'avance
+export const COUNTDOWN_MS = 3_000;
 export const QUESTION_MS = 12_000;
 // Marge pour la latence : une réponse partie juste avant la fin doit encore compter
 export const ANSWER_GRACE_MS = 500;

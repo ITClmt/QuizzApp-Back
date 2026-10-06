@@ -13,6 +13,7 @@ import { isUUID } from 'class-validator';
 import type { Server, Socket } from 'socket.io';
 import type { JwtPayload } from 'src/auth/types/jwt-payload.type';
 import { ErrorCode } from 'src/common/error-codes';
+import { Difficulty } from 'src/generated/prisma/client';
 import { GameEngineService } from './engine/game-engine.service';
 import { GameError } from './engine/live-game';
 import { GameEmitter, gameRoom, userRoom } from './game-emitter.service';
@@ -102,6 +103,40 @@ export class GamesGateway
 	start(@ConnectedSocket() socket: GameSocket, @MessageBody() body: unknown) {
 		return this.handle(body, async (gameId) => {
 			await this.engine.start(socket.data.userId, gameId);
+			return null;
+		});
+	}
+
+	@SubscribeMessage('game:ready')
+	ready(@ConnectedSocket() socket: GameSocket, @MessageBody() body: unknown) {
+		return this.handle(body, async (gameId) => {
+			const { ready } = body as { ready?: unknown };
+			if (typeof ready !== 'boolean') {
+				throw new GameError(ErrorCode.INVALID_PAYLOAD);
+			}
+			this.engine.setReady(socket.data.userId, gameId, ready);
+			return null;
+		});
+	}
+
+	/** `difficulty: null` = partie mixte */
+	@SubscribeMessage('game:difficulty')
+	difficulty(
+		@ConnectedSocket() socket: GameSocket,
+		@MessageBody() body: unknown,
+	) {
+		return this.handle(body, async (gameId) => {
+			const { difficulty } = body as { difficulty?: unknown };
+			const valid =
+				difficulty === null ||
+				Object.values(Difficulty).includes(difficulty as Difficulty);
+			if (!valid) throw new GameError(ErrorCode.INVALID_PAYLOAD);
+
+			await this.engine.setDifficulty(
+				socket.data.userId,
+				gameId,
+				difficulty as Difficulty | null,
+			);
 			return null;
 		});
 	}

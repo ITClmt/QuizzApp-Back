@@ -5,7 +5,7 @@ import { toPublicUser } from 'src/users/utils/public-user';
 export type PublicUser = ReturnType<typeof toPublicUser>;
 
 /**
- * LOBBY → STARTING (chargement en base) → QUESTION ⇄ REVEAL (×15) → FINISHED.
+ * LOBBY → STARTING (décompte + chargement en base) → QUESTION ⇄ REVEAL (×15) → FINISHED.
  * STARTING bloque un double lancement et les nouvelles arrivées pendant l'attente.
  */
 export type GamePhase =
@@ -26,6 +26,8 @@ export interface LivePlayer {
 	user: PublicUser;
 	isHost: boolean;
 	status: GamePlayerStatus;
+	/** Prêt à jouer, dans le salon. Toujours false pour l'hôte : lancer vaut prêt. */
+	ready: boolean;
 	/** Sockets du joueur actuellement dans la partie (un par appareil) */
 	socketIds: Set<string>;
 	/** Était JOINED au lancement : fait partie du classement, même s'il abandonne */

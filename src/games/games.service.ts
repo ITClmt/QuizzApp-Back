@@ -66,11 +66,6 @@ export class GamesService implements OnApplicationBootstrap {
     await this.assertNotPlaying(hostId);
     await this.friendsService.assertAllFriends(hostId, friendIds);
 
-    const questions = await this.quizService.pickRandomQuestions({
-      difficulty,
-      count: GAME_QUESTIONS,
-    });
-
     return this.prisma.$transaction(async (tx) => {
       const exits = await this.leaveWaitingLobbies(tx, hostId);
 
@@ -82,9 +77,6 @@ export class GamesService implements OnApplicationBootstrap {
               { userId: hostId, isHost: true, status: "JOINED" },
               ...friendIds.map((userId) => ({ userId })),
             ],
-          },
-          gameQuestions: {
-            create: questions.map((q, order) => ({ questionId: q.id, order })),
           },
         },
         select: { id: true },
@@ -154,16 +146,42 @@ export class GamesService implements OnApplicationBootstrap {
     });
   }
 
+  /** L'hôte change la difficulté depuis le salon */
+  async setDifficulty(gameId: string, difficulty: Difficulty | null) {
+    await this.prisma.game.updateMany({
+      where: { id: gameId, status: "WAITING" },
+      data: { difficulty },
+    });
+  }
+
   /**
-   * Passe la partie en PLAYING et charge ce que le moteur garde en mémoire : les 15
-   * questions (dans les deux langues) et la langue de chaque joueur, lue maintenant
-   * plutôt qu'à la création du salon pour tenir compte d'un changement entre-temps.
+   * Passe la partie en PLAYING, tire ses 15 questions et charge ce que le moteur
+   * garde en mémoire : les questions (dans les deux langues) et la langue de chaque
+   * joueur. Le tirage se fait au lancement, et non à la création du salon, parce que
+   * la difficulté peut changer d'ici là ; la langue aussi est lue maintenant.
    */
-  async startGame(gameId: string, playerIds: string[]) {
-    const [, gameQuestions, users] = await this.prisma.$transaction([
+  async startGame(
+    gameId: string,
+    playerIds: string[],
+    difficulty: Difficulty | null,
+  ) {
+    const questions = await this.quizService.pickRandomQuestions({
+      difficulty: difficulty ?? undefined,
+      count: GAME_QUESTIONS,
+    });
+
+    const [, , gameQuestions, users] = await this.prisma.$transaction([
+      // La difficulté est réécrite ici : celle du moteur fait foi au lancement
       this.prisma.game.update({
         where: { id: gameId },
-        data: { status: "PLAYING", startedAt: new Date() },
+        data: { status: "PLAYING", startedAt: new Date(), difficulty },
+      }),
+      this.prisma.gameQuestion.createMany({
+        data: questions.map((q, order) => ({
+          gameId,
+          questionId: q.id,
+          order,
+        })),
       }),
       this.prisma.gameQuestion.findMany({
         where: { gameId },

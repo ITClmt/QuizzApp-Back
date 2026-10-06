@@ -7,6 +7,7 @@ import { toPublicUser } from 'src/users/utils/public-user';
 import {
 	ABANDON_MS,
 	ANSWER_GRACE_MS,
+	COUNTDOWN_MS,
 	LOBBY_TIMEOUT_MS,
 	MIN_PLAYERS_TO_START,
 	QUESTION_MS,
@@ -113,6 +114,7 @@ export class GameEngineService {
 				throw new GameError(ErrorCode.GAME_ALREADY_STARTED);
 			}
 			player.status = 'JOINED';
+			player.ready = false;
 		}
 
 		player.socketIds.add(socketId);
@@ -142,6 +144,7 @@ export class GameEngineService {
 		if (player.status !== 'JOINED') return;
 
 		player.status = 'LEFT';
+		player.ready = false;
 		player.socketIds.clear();
 		this.emitter.removeUserFromGame(userId, gameId);
 		this.broadcastLobby(game);
@@ -168,7 +171,59 @@ export class GameEngineService {
 		this.onPresenceChange(game);
 	}
 
-	/** L'hôte lance la partie, à partir de 2 joueurs dans le salon */
+	/** Un joueur du salon (hors hôte) se dit prêt, ou ne l'est plus */
+	setReady(userId: string, gameId: string, ready: boolean) {
+		const game = this.requireGame(gameId);
+		const player = this.requirePlayer(game, userId);
+		if (game.phase !== 'LOBBY') {
+			throw new GameError(ErrorCode.GAME_ALREADY_STARTED);
+		}
+		// L'hôte n'a pas de bouton prêt : c'est lui qui lance
+		if (player.isHost) throw new GameError(ErrorCode.INVALID_PAYLOAD);
+		if (player.status !== 'JOINED') throw new GameError(ErrorCode.NOT_A_PLAYER);
+		if (player.ready === ready) return;
+
+		player.ready = ready;
+		this.broadcastLobby(game);
+	}
+
+	/**
+	 * L'hôte change la difficulté depuis le salon. Les joueurs se sont dits prêts
+	 * pour l'ancienne : ils doivent se remettre prêts.
+	 */
+	async setDifficulty(
+		userId: string,
+		gameId: string,
+		difficulty: Difficulty | null,
+	) {
+		const game = this.requireGame(gameId);
+		const player = this.requirePlayer(game, userId);
+		if (!player.isHost) throw new GameError(ErrorCode.NOT_HOST);
+		if (game.phase !== 'LOBBY') {
+			throw new GameError(ErrorCode.GAME_ALREADY_STARTED);
+		}
+		if (game.difficulty === difficulty) return;
+
+		game.difficulty = difficulty;
+		for (const p of game.players.values()) p.ready = false;
+		this.broadcastLobby(game);
+
+		// Les invités qui n'ont pas encore rejoint voient la difficulté sur l'invitation
+		const invitation = this.toInvitation(game);
+		for (const p of game.players.values()) {
+			if (hasPendingInvitation(p)) {
+				this.emitter.toUser(p.user.id, 'invitation:updated', invitation);
+			}
+		}
+
+		await this.gamesService.setDifficulty(game.id, difficulty);
+	}
+
+	/**
+	 * L'hôte lance la partie, à partir de 2 joueurs dans le salon, tous prêts.
+	 * Un décompte de 3 s précède la 1re question, pour que l'hôte n'ait pas d'avance :
+	 * les questions se chargent pendant ce temps.
+	 */
 	async start(userId: string, gameId: string) {
 		const game = this.requireGame(gameId);
 		const player = this.requirePlayer(game, userId);
@@ -183,16 +238,25 @@ export class GameEngineService {
 		if (joined.length < MIN_PLAYERS_TO_START) {
 			throw new GameError(ErrorCode.NOT_ENOUGH_PLAYERS);
 		}
+		// Un déconnecté ne verrait pas le décompte : on attend qu'il revienne
+		const allReady = joined.every(
+			(p) => p.isHost || (p.ready && p.socketIds.size > 0),
+		);
+		if (!allReady) throw new GameError(ErrorCode.PLAYERS_NOT_READY);
 
 		game.phase = 'STARTING';
+		game.phaseEndsAt = Date.now() + COUNTDOWN_MS;
 		clearTimeout(game.lobbyTimer);
 		for (const p of joined) p.playing = true;
+		// Tout de suite, pour que les clients affichent le décompte pendant le chargement
+		this.broadcastLobby(game);
 
 		let loaded: Awaited<ReturnType<GamesService['startGame']>>;
 		try {
 			loaded = await this.gamesService.startGame(
 				game.id,
 				joined.map((p) => p.user.id),
+				game.difficulty,
 			);
 		} catch (err) {
 			await this.cancel(game, 'server_error');
@@ -215,8 +279,11 @@ export class GameEngineService {
 			}
 		}
 
-		this.broadcastLobby(game);
-		this.nextQuestion(game);
+		// Chargement plus long que le décompte : la 1re question part dès qu'il finit
+		game.phaseTimer = setTimeout(
+			() => this.nextQuestion(game),
+			Math.max(0, game.phaseEndsAt - Date.now()),
+		);
 	}
 
 	/** Une seule réponse par question, tant que la question est ouverte */
@@ -384,6 +451,7 @@ export class GameEngineService {
 				user,
 				isHost: p.isHost,
 				status: p.status,
+				ready: false,
 				socketIds: new Set(),
 				playing: false,
 				lang: 'en',
@@ -481,6 +549,7 @@ export class GameEngineService {
 			const player = game?.players.get(userId);
 			if (!game || !player) continue;
 			player.status = 'LEFT';
+			player.ready = false;
 			player.socketIds.clear();
 			this.emitter.removeUserFromGame(userId, gameId);
 			this.broadcastLobby(game);
@@ -561,6 +630,7 @@ export class GameEngineService {
 				user: p.user,
 				isHost: p.isHost,
 				status: p.status,
+				ready: p.ready,
 				connected: p.socketIds.size > 0,
 			})),
 		};

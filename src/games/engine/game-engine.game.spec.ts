@@ -1,6 +1,7 @@
 import {
 	ABANDON_MS,
 	ANSWER_GRACE_MS,
+	COUNTDOWN_MS,
 	QUESTION_MS,
 	REVEAL_MS,
 } from '../constants';
@@ -52,6 +53,11 @@ describe('GameEngineService (partie)', () => {
 	const lastReveal = () => sent('reveal').at(-1)?.[2];
 	const answer = (userId: string, questionIndex: number, answerIndex: number) =>
 		engine.answer(userId, 'g1', questionIndex, answerIndex);
+	/** Lance la partie et laisse passer le décompte : la 1re question est envoyée */
+	const launch = async () => {
+		await engine.start('host', 'g1');
+		jest.advanceTimersByTime(COUNTDOWN_MS);
+	};
 
 	beforeEach(async () => {
 		jest.useFakeTimers();
@@ -106,6 +112,7 @@ describe('GameEngineService (partie)', () => {
 		await engine.createGame('host', ['bob', 'eve']);
 		await engine.join('host', 's-host', 'g1');
 		await engine.join('bob', 's-bob', 'g1');
+		engine.setReady('bob', 'g1', true);
 		jest.clearAllMocks();
 	});
 
@@ -126,8 +133,70 @@ describe('GameEngineService (partie)', () => {
 			);
 		});
 
-		it('un second lancement est refusé', async () => {
+		it('refuse tant qu’un joueur du salon n’est pas prêt', async () => {
+			engine.setReady('bob', 'g1', false);
+
+			await expect(engine.start('host', 'g1')).rejects.toEqual(
+				new GameError('PLAYERS_NOT_READY'),
+			);
+			expect(gamesService.startGame).not.toHaveBeenCalled();
+		});
+
+		it('refuse si un joueur prêt est déconnecté', async () => {
+			engine.disconnect('bob', 's-bob', 'g1');
+
+			await expect(engine.start('host', 'g1')).rejects.toEqual(
+				new GameError('PLAYERS_NOT_READY'),
+			);
+		});
+
+		it('un invité qui n’a pas rejoint ne bloque pas le lancement', async () => {
+			// eve est encore INVITED : elle ne compte pas
+			await expect(engine.start('host', 'g1')).resolves.toBeUndefined();
+		});
+
+		it('décompte de 3 s avant la 1re question', async () => {
 			await engine.start('host', 'g1');
+
+			expect(sent('lobby:update').at(-1)?.[2]).toMatchObject({
+				phase: 'STARTING',
+			});
+			jest.advanceTimersByTime(COUNTDOWN_MS - 1);
+			expect(sent('question')).toEqual([]);
+			expect(() => answer('host', 0, 0)).toThrow(
+				new GameError('ANSWER_REJECTED'),
+			);
+
+			jest.advanceTimersByTime(1);
+			expect(sentTo('host', 'question')).toHaveLength(1);
+		});
+
+		it('reconnexion pendant le décompte : le temps restant', async () => {
+			await engine.start('host', 'g1');
+			engine.disconnect('bob', 's-bob', 'g1');
+			jest.advanceTimersByTime(1_000);
+
+			const { state } = await engine.join('bob', 's-bob-2', 'g1');
+
+			expect(state).toMatchObject({
+				phase: 'STARTING',
+				question: null,
+				remainingMs: COUNTDOWN_MS - 1_000,
+			});
+		});
+
+		it('quitter pendant le décompte est un abandon, la partie continue', async () => {
+			await engine.start('host', 'g1');
+			await engine.leave('bob', 'g1');
+			jest.advanceTimersByTime(COUNTDOWN_MS);
+
+			expect(sentTo('host', 'question')).toHaveLength(1);
+			expect(sentTo('bob', 'question')).toEqual([]);
+			expect(sent('game:canceled')).toEqual([]);
+		});
+
+		it('un second lancement est refusé', async () => {
+			await launch();
 
 			await expect(engine.start('host', 'g1')).rejects.toEqual(
 				new GameError('GAME_ALREADY_STARTED'),
@@ -135,12 +204,13 @@ describe('GameEngineService (partie)', () => {
 		});
 
 		it('envoie la 1re question à chacun dans sa langue, sans la bonne réponse', async () => {
-			await engine.start('host', 'g1');
+			await launch();
 
-			expect(gamesService.startGame).toHaveBeenCalledWith('g1', [
-				'host',
-				'bob',
-			]);
+			expect(gamesService.startGame).toHaveBeenCalledWith(
+				'g1',
+				['host', 'bob'],
+				null,
+			);
 			const [toHost] = sentTo('host', 'question');
 			const [toBob] = sentTo('bob', 'question');
 			expect(toHost).toMatchObject({
@@ -160,7 +230,7 @@ describe('GameEngineService (partie)', () => {
 		});
 
 		it("annule l'invitation de ceux qui n'ont pas rejoint", async () => {
-			await engine.start('host', 'g1');
+			await launch();
 
 			expect(sentTo('eve', 'invitation:canceled')).toEqual([{ gameId: 'g1' }]);
 		});
@@ -169,13 +239,13 @@ describe('GameEngineService (partie)', () => {
 			await engine.join('eve', 's-eve', 'g1');
 			await engine.leave('eve', 'g1');
 
-			await engine.start('host', 'g1');
+			await launch();
 
 			expect(sentTo('eve', 'invitation:canceled')).toEqual([{ gameId: 'g1' }]);
 		});
 
 		it('un invité ne peut plus rejoindre une partie lancée', async () => {
-			await engine.start('host', 'g1');
+			await launch();
 
 			await expect(engine.join('eve', 's-eve', 'g1')).rejects.toEqual(
 				new GameError('GAME_ALREADY_STARTED'),
@@ -185,7 +255,7 @@ describe('GameEngineService (partie)', () => {
 
 	describe('questions et réponses', () => {
 		beforeEach(async () => {
-			await engine.start('host', 'g1');
+			await launch();
 			jest.clearAllMocks();
 		});
 
@@ -276,7 +346,7 @@ describe('GameEngineService (partie)', () => {
 
 	describe('fin de partie', () => {
 		beforeEach(async () => {
-			await engine.start('host', 'g1');
+			await launch();
 		});
 
 		/**
@@ -394,7 +464,7 @@ describe('GameEngineService (partie)', () => {
 
 	describe('déconnexions', () => {
 		beforeEach(async () => {
-			await engine.start('host', 'g1');
+			await launch();
 			jest.clearAllMocks();
 		});
 
