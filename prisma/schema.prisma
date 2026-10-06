@@ -32,11 +32,13 @@ model User {
   receivedRequests Friendship[]  @relation("receiver")
   gamePlayers      GamePlayer[]
   soloSessions     SoloSession[]
+
+  passwordResetCode PasswordResetCode?
 }
 
 model Question {
-  id           String   @id @default(uuid())
-  sourceId     String   @unique
+  id           String    @id @default(uuid())
+  sourceId     String    @unique
   questionEn   String
   questionFr   String?
   answersEn    Json
@@ -44,7 +46,7 @@ model Question {
   correctIndex Int
   category     String
   difficulty   String
-  createdAt    DateTime @default(now())
+  createdAt    DateTime  @default(now())
   // Retirée du tirage sans être supprimée : l'historique des parties la référence encore
   retiredAt    DateTime?
 
@@ -244,6 +246,17 @@ model RefreshToken {
   token     String   @unique
   userId    String
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+}
+
+// Un seul code actif par utilisateur : une nouvelle demande écrase la précédente
+model PasswordResetCode {
+  id        String   @id @default(uuid())
+  userId    String   @unique
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  codeHash  String
+  attempts  Int      @default(0)
   expiresAt DateTime
   createdAt DateTime @default(now())
 }

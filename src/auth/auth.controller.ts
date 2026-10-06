@@ -3,8 +3,10 @@ import { Throttle } from '@nestjs/throttler';
 import { CreateUserDto } from 'src/users/dto/create-user.dto';
 import { AuthService } from './auth.service';
 import { Public } from './decorators/public.decorator';
+import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { LoginDto } from './dto/login.dto';
 import { RefreshTokenDto } from './dto/refresh_token.dto';
+import { ResetPasswordDto } from './dto/reset-password.dto';
 
 @Controller('auth')
 export class AuthController {
@@ -39,5 +41,22 @@ export class AuthController {
 	@HttpCode(HttpStatus.NO_CONTENT)
 	async logout(@Body() data: RefreshTokenDto) {
 		await this.authService.logout(data.refreshToken);
+	}
+
+	@Throttle({ default: { limit: 3, ttl: 900000 } })
+	@Public()
+	@Post('forgot-password')
+	@HttpCode(HttpStatus.NO_CONTENT)
+	forgotPassword(@Body() data: ForgotPasswordDto) {
+		// Volontairement non attendu (cf. AuthService.requestPasswordReset)
+		void this.authService.requestPasswordReset(data.email);
+	}
+
+	@Throttle({ default: { limit: 10, ttl: 900000 } })
+	@Public()
+	@Post('reset-password')
+	@HttpCode(HttpStatus.NO_CONTENT)
+	async resetPassword(@Body() data: ResetPasswordDto) {
+		await this.authService.resetPassword(data);
 	}
 }

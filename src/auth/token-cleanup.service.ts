@@ -19,5 +19,13 @@ export class TokenCleanupService {
 		});
 
 		this.logger.log(`🧹 ${result.count} refresh token(s) expirés supprimés`);
+
+		const codes = await this.prisma.passwordResetCode.deleteMany({
+			where: { expiresAt: { lt: new Date() } },
+		});
+
+		this.logger.log(
+			`🧹 ${codes.count} code(s) de réinitialisation expirés supprimés`,
+		);
 	}
 }

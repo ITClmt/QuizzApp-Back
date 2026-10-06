@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { APP_GUARD } from '@nestjs/core';
 import { JwtModule } from '@nestjs/jwt';
+import { MailModule } from 'src/mail/mail.module';
 import { UsersModule } from 'src/users/users.module';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
@@ -12,6 +13,7 @@ import { TokenCleanupService } from './token-cleanup.service';
 @Module({
 	imports: [
 		UsersModule,
+		MailModule,
 		JwtModule.registerAsync({
 			global: true,
 			inject: [ConfigService],

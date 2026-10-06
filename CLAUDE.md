@@ -72,6 +72,8 @@ POST /api/auth/register   @Public()
 POST /api/auth/login      @Public()  — rate limited: 5 req / 15 min
 POST /api/auth/refresh    @Public()
 POST /api/auth/logout
+POST /api/auth/forgot-password  @Public()  — 3 req / 15 min, always 204
+POST /api/auth/reset-password   @Public()  — 10 req / 15 min
 ```
 
 Access token: short-lived JWT (Bearer).  
@@ -115,6 +117,8 @@ POST   /api/auth/register                 @Public()
 POST   /api/auth/login                    @Public() — 5 req/15min
 POST   /api/auth/refresh                  @Public()
 POST   /api/auth/logout
+POST   /api/auth/forgot-password          @Public() — { email } — always 204 (no account enumeration), not awaited; 3 req/15min
+POST   /api/auth/reset-password           @Public() — { email, code (6 digits), newPassword } — 204, revokes every refresh token; 10 req/15min
 
 GET    /api/users                         @Roles(ADMIN)
 GET    /api/users/avatars                 avatar catalog + unlock status per user level
@@ -187,7 +191,7 @@ CORS reuses `corsOrigin()` (`src/common/cors.ts`) through `SocketIoAdapter` — 
 
 - DTOs use `class-validator`. `ValidationPipe` has `whitelist: true` + `forbidNonWhitelisted: true` — unknown fields are rejected with 400.
 - `username` in `CreateUserDto`/`UpdateUserDto` is checked against a profanity/slur filter via the `@IsNotForbiddenWord()` custom validator (`src/common/validators/is-not-forbidden-word.decorator.ts`). Matching engine: `obscenity` (`src/common/moderation/profanity.ts`), combining its built-in English dataset with a French word list sourced from the community LDNOOBW repo (`src/common/moderation/forbidden-words.fr.ts`, with a few upstream entries dropped as Scunthorpe-style false positives — see file comment). French words are matched whole-word only (`|word|` boundary patterns) and accent-normalized via a custom transformer, since `obscenity`'s built-in transformers are ASCII-only. Perspective API (Google/Jigsaw) was considered and rejected: it's sunsetting (service ends 2026-12-31, no new quota requests accepted since 2026-02), needs a synchronous external call on the register path, and its toxicity model isn't tuned for single-token strings like usernames.
-- Password changes are **not supported** via PATCH /users/:id. Requires a dedicated endpoint (not yet implemented).
+- Password changes are **not supported** via PATCH /users/:id. A forgotten password goes through the reset flow: a 6-digit code (argon2-hashed in `PasswordResetCode`, one row per user, 15 min, 5 attempts consumed atomically *before* verification, 60 s resend cooldown) sent by `MailService` (`src/mail/`, Resend HTTP API via native `fetch`, FR/EN template from `User.lang`). Every failure returns the same `AUTH_RESET_CODE_INVALID`. Without `RESEND_API_KEY` (local dev) the code is logged instead of sent. The password rules live in `@IsStrongPassword()` (`src/common/validators/is-strong-password.decorator.ts`), shared by register and reset. A "change password while logged in" endpoint does not exist yet.
 - Avatars follow the same architecture as quiz categories: a static catalog in code
   (`src/users/constants/avatars.ts`) with a per-avatar `unlockLevel`, and ownership **derived**
   from `getLevelFromXp(user.xp)` — never persisted, so there is no unlock table to migrate or
