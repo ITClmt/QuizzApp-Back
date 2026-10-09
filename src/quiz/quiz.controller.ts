@@ -63,6 +63,11 @@ export class QuizController {
 		return this.quizService.getQuestions(lang, difficulty, category);
 	}
 
+	@Get('quota')
+	async getQuota(@CurrentUser() user: JwtPayload) {
+		return this.quizService.getQuota(user.sub);
+	}
+
 	@Post('start')
 	async startSession(
 		@Query() query: GetQuestionsDto,

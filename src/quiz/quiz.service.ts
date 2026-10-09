@@ -1,5 +1,7 @@
 import {
   BadRequestException,
+  HttpException,
+  HttpStatus,
   Injectable,
   NotFoundException,
 } from "@nestjs/common";
@@ -27,6 +29,9 @@ export class QuizService {
   private readonly QUESTIONS_PER_GAME = 30;
   private readonly GAME_DURATION_MS = 60 * 1000; // 1min
   private readonly SESSION_GRACE_MS = 60 * 1000;
+  // Fenêtre glissante : les parties lancées (même annulées) comptent pendant 6 h
+  private readonly GAMES_PER_WINDOW = 15;
+  private readonly QUOTA_WINDOW_MS = 6 * 60 * 60 * 1000;
 
   constructor(
     private readonly prisma: PrismaService,
@@ -149,6 +154,18 @@ export class QuizService {
     difficulty?: string,
     category?: string,
   ) {
+    // Avant d'annuler la partie en cours : un refus ne doit pas la faire perdre
+    const quota = await this.getQuota(userId);
+    if (quota.remaining === 0) {
+      throw new HttpException(
+        {
+          ...errorBody(ErrorCode.GAME_LIMIT_REACHED, "Game limit reached"),
+          resetAt: quota.resetAt,
+        },
+        HttpStatus.TOO_MANY_REQUESTS,
+      );
+    }
+
     await this.prisma.soloSession.updateMany({
       where: { userId, status: "IN_PROGRESS" },
       data: { status: "CANCELED" },
@@ -175,6 +192,32 @@ export class QuizService {
       expiresAt: session.expiresAt,
       durationMs: this.GAME_DURATION_MS,
       questions,
+    };
+  }
+
+  /**
+   * `resetAt` : moment où la plus ancienne partie de la fenêtre en sort et
+   * libère une place. `null` tant qu'il en reste.
+   */
+  async getQuota(userId: string) {
+    const recent = await this.prisma.soloSession.findMany({
+      where: {
+        userId,
+        createdAt: { gt: new Date(Date.now() - this.QUOTA_WINDOW_MS) },
+      },
+      select: { createdAt: true },
+      orderBy: { createdAt: "asc" },
+      take: this.GAMES_PER_WINDOW,
+    });
+
+    const remaining = this.GAMES_PER_WINDOW - recent.length;
+    return {
+      limit: this.GAMES_PER_WINDOW,
+      remaining,
+      resetAt:
+        remaining === 0
+          ? new Date(recent[0].createdAt.getTime() + this.QUOTA_WINDOW_MS)
+          : null,
     };
   }
 
