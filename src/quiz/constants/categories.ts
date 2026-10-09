@@ -8,7 +8,7 @@ export interface QuizCategory {
 /**
  * Above MAX_LEVEL (50), so the category can never be unlocked. Used to sideline
  * categories whose question pool is too small for a 50-question game on any
- * difficulty (verified 2026-08-05).
+ * difficulty (verified 2026-08-05, when games were 50 questions).
  */
 export const SIDELINED_UNLOCK_LEVEL = 101;
 
