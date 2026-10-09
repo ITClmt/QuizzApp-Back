@@ -75,26 +75,25 @@ describe('QuizService', () => {
 				createdAt: new Date(oldest.getTime() + i * 1000),
 			}));
 
-		it("rend le nombre de parties restantes sans resetAt tant qu'il en reste", async () => {
-			prisma.soloSession.findMany.mockResolvedValue(
-				sessions(4, new Date(Date.now() - HOUR)),
-			);
+		it("rend le quota complet sans nextGameAt quand aucune partie n'a été jouée", async () => {
+			prisma.soloSession.findMany.mockResolvedValue([]);
 
 			await expect(service.getQuota('u1')).resolves.toEqual({
 				limit: 15,
-				remaining: 11,
-				resetAt: null,
+				windowHours: 6,
+				remaining: 15,
+				nextGameAt: null,
 			});
 		});
 
-		it('fixe resetAt 6 h après la plus ancienne partie de la fenêtre', async () => {
+		it('fixe nextGameAt 6 h après la plus ancienne partie de la fenêtre', async () => {
 			const oldest = new Date(Date.now() - 2 * HOUR);
-			prisma.soloSession.findMany.mockResolvedValue(sessions(15, oldest));
+			prisma.soloSession.findMany.mockResolvedValue(sessions(4, oldest));
 
 			const quota = await service.getQuota('u1');
 
-			expect(quota.remaining).toBe(0);
-			expect(quota.resetAt).toEqual(new Date(oldest.getTime() + 6 * HOUR));
+			expect(quota.remaining).toBe(11);
+			expect(quota.nextGameAt).toEqual(new Date(oldest.getTime() + 6 * HOUR));
 		});
 	});
 

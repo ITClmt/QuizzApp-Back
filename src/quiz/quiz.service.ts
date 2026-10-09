@@ -160,7 +160,7 @@ export class QuizService {
       throw new HttpException(
         {
           ...errorBody(ErrorCode.GAME_LIMIT_REACHED, "Game limit reached"),
-          resetAt: quota.resetAt,
+          nextGameAt: quota.nextGameAt,
         },
         HttpStatus.TOO_MANY_REQUESTS,
       );
@@ -196,8 +196,8 @@ export class QuizService {
   }
 
   /**
-   * `resetAt` : moment où la plus ancienne partie de la fenêtre en sort et
-   * libère une place. `null` tant qu'il en reste.
+   * `nextGameAt` : moment où la plus ancienne partie de la fenêtre en sort et
+   * rend une place. `null` si aucune partie n'a été jouée dans la fenêtre.
    */
   async getQuota(userId: string) {
     const recent = await this.prisma.soloSession.findMany({
@@ -210,12 +210,12 @@ export class QuizService {
       take: this.GAMES_PER_WINDOW,
     });
 
-    const remaining = this.GAMES_PER_WINDOW - recent.length;
     return {
       limit: this.GAMES_PER_WINDOW,
-      remaining,
-      resetAt:
-        remaining === 0
+      windowHours: this.QUOTA_WINDOW_MS / (60 * 60 * 1000),
+      remaining: this.GAMES_PER_WINDOW - recent.length,
+      nextGameAt:
+        recent.length > 0
           ? new Date(recent[0].createdAt.getTime() + this.QUOTA_WINDOW_MS)
           : null,
     };
